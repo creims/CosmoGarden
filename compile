@@ -1,0 +1,5 @@
+emcc -O3 -s FULL_ES2=1 -s USE_SDL=2 -s -std=gnu++14 \
+-o module.js --preload-file shaders \
+-s WASM=1 \
+-idirafter /usr/include/ \
+main.cpp branch.cpp common.cpp shader_utils.cpp math_utils.cpp bezier.cpp tree.cpp arcball.cpp batchdrawer.cpp 
