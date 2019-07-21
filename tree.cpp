@@ -5,29 +5,41 @@
 #include "math_utils.h"
 
 #define DEFAULT_NUMPTS 8
-#define BRANCH_SCALE 2.0f
 
 using glm::vec3;
 using glm::quat;
 
-struct refBranch {
-    vec3 c1, c2, c3;
-};
+refBranch defaultGenBranch() {
+    static refBranch ref{
+            .c1 = vec3{0.6f, 0.0f, 0.0f},
+            .c2 = vec3{1.6f, 0.3f, 0.0f},
+            .c3 = vec3{1.8f, 1.4f, 0.0f},
+    };
+
+    return ref;
+}
 
 Tree::Tree(Bezier trunk, unsigned int ticks, batchdrawer& drawer)
-: lastTick{ticks}, drawer{drawer} {
-    static refBranch ref{
-            .c1 = vec3{0.3f, 0.0f, 0.0f} * BRANCH_SCALE,
-            .c2 = vec3{0.8f, 0.3f, 0.0f} * BRANCH_SCALE,
-            .c3 = vec3{0.9f, 0.7f, 0.0f} * BRANCH_SCALE,
-    };
+: trunk{std::move(trunk)}, trunkTicks{ticks}, lastTick{ticks}, drawer{drawer} {
+    genBranch = defaultGenBranch;
+
+    build();
+}
+
+void Tree::build() {
+    drawer.clear();
+    curves.clear();
+    branches.clear();
+    branchData.clear();
+
+    currTicks = 0;
 
     curves.push_back(trunk);
 
-    addBranch(trunk, 0.2f, 0, ticks, 1.0f / ticks);
+    addBranch(trunk, 0.2f, 0, trunkTicks, 1.0f / trunkTicks);
 
     float branchPct = 0.7f;
-    furcate(3, 3, branchPct, ref, 0.61f, trunk.pointAt(branchPct), 0, ticks);
+    furcate(3, 3, branchPct, 0.61f, trunk.pointAt(branchPct), 0, trunkTicks);
 
     for(int i = 0; i < branches.size(); i++) {
         branchData[i].id = drawer.registerObject(branches[i]);
@@ -43,7 +55,7 @@ void Tree::addBranch(Bezier& curve, float radius, unsigned int startTick, unsign
     branchData.emplace_back(branchInfo{INVALID_OBJECT_ID, startTick, endTick, tickIncrement, false});
 }
 
-void Tree::furcate(int timesToBranch, int numBranches, float pctAlong, const refBranch& ref, float scale, posAndDir p,
+void Tree::furcate(int timesToBranch, int numBranches, float pctAlong, float scale, posAndDir p,
                    unsigned int pStartTick, unsigned int pTicks) {
     if (timesToBranch < 1) return;
 
@@ -53,6 +65,7 @@ void Tree::furcate(int timesToBranch, int numBranches, float pctAlong, const ref
 
     // TODO: a = 0 roll is random due to noise of rotationBetweenVectors; use lookAt?
     for (int i = 0; i < numBranches; i++) {
+        refBranch ref = genBranch();
         quat rot = rotationBetweenVectors(WORLD_UP, p.direction);
         rot = angleAxis(angle, p.direction) * rot;
 
@@ -73,7 +86,7 @@ void Tree::furcate(int timesToBranch, int numBranches, float pctAlong, const ref
 
         angle += inc;
 
-        furcate(timesToBranch - 1, numBranches, newPct, ref, scale * scale, curve.pointAt(newPct), newStartTick, newTicks);
+        furcate(timesToBranch - 1, numBranches, newPct, scale * scale, curve.pointAt(newPct), newStartTick, newTicks);
     }
 }
 
@@ -105,5 +118,9 @@ void Tree::updateBranches() {
         branches[i].setGrowth(pct);
         drawer.updateObject(info.id);
     }
+}
+
+void Tree::setBranchGenerator(refBranch (*gen)()) {
+    genBranch = gen;
 }
 

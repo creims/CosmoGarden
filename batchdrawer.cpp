@@ -49,7 +49,7 @@ void batchdrawer::updateObject(object_id id) {
 
     geometry g = info.object.genGeometry();
 
-    if(g.vertices->empty()) {
+    if(g.vertices->empty() || g.indices->empty()) {
         return;
     }
 
@@ -83,6 +83,8 @@ void batchdrawer::updateObject(object_id id) {
 
     start_vbuf = size_vbuf;
     start_ibuf = size_ibuf;
+
+    g.free();
 }
 
 void batchdrawer::prepareToDraw() {
@@ -108,6 +110,16 @@ void batchdrawer::restoreTo(ObjectInfo& oi) {
     start_vertices = start_vbuf / sizeof(glm::vec3);
 
     bufferDirty = false;
+}
+
+void batchdrawer::clear() {
+    start_vbuf = 0;
+    start_ibuf = 0;
+    size_vbuf = 0;
+    size_ibuf = 0;
+    start_vertices = 0;
+
+    registeredObjects.clear();
 }
 
 

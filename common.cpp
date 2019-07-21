@@ -207,3 +207,7 @@ void cClose() {
 bool shouldQuit() {
     return quit;
 }
+
+Tree* getSceneTree() {
+    return scene.tree;
+}

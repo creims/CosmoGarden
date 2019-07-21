@@ -6,6 +6,11 @@
 struct geometry {
     std::vector<glm::vec3>* vertices;
     std::vector<GLushort>* indices;
+
+    void free() {
+        delete vertices;
+        delete indices;
+    }
 };
 
 class Drawable {

@@ -5,11 +5,20 @@
 #include "common.h"
 
 #ifdef EMSCRIPTEN
-#  include "emscripten.h"
+#   include "emscripten.h"
+#   include "web.cpp"
 #endif
 
 static SDL_Window* window;
 static SDL_GLContext glContext;
+
+refBranch getBranch() {
+    return refBranch{
+            glm::vec3{0.3, 0.0, 0.0},
+            glm::vec3{1.0, -0.5, 0.0},
+            glm::vec3{2.0, -1.0, 0.0}
+    };
+}
 
 extern "C" int main(int argc, char** argv) {
     int w = 800;
@@ -48,8 +57,18 @@ extern "C" int main(int argc, char** argv) {
     }
 
 #ifdef EMSCRIPTEN
+    setActiveTree(getSceneTree());
+
+    // Disable keyboard events to allow the browser window to process keypresses
+    SDL_EventState(SDL_TEXTINPUT, SDL_DISABLE);
+    SDL_EventState(SDL_KEYDOWN, SDL_DISABLE);
+    SDL_EventState(SDL_KEYUP, SDL_DISABLE);
+
     emscripten_set_main_loop(update, 0, 1);
 #else
+
+    getSceneTree()->setBranchGenerator(getBranch);
+    getSceneTree()->build();
     while(!shouldQuit()) {
         update();
     }

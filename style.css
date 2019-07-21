@@ -1,0 +1,40 @@
+body {
+    background-color: lightblue;
+}
+
+.display {
+    display: flex;
+    width: 90vw;
+    height: 90vh;
+}
+
+.controls {
+    width: 100%;
+    display: flex;
+    margin-left: 10px;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+textarea {
+    width: 100%;
+    background-color: lightskyblue;
+    resize: none;
+}
+
+.code {
+    height: 80%;
+}
+
+button {
+    width: 40%;
+    justify-self: center;
+
+    border: 3px solid black;
+    border-radius: 15px;
+
+    background-color: cornflowerblue;
+    font-weight: bolder;
+    color: black;
+    font-size: 2em;
+}

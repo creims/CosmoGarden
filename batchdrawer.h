@@ -15,6 +15,8 @@ class batchdrawer {
 public:
     batchdrawer();
 
+    void clear();
+
     object_id registerObject(Drawable& d);
     void updateObject(object_id id);
 
