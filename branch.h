@@ -27,7 +27,7 @@ private:
     float globalScale{1.0f};
     float growthPercent{1.0f};
 
-    void genCrection(std::vector<glm::vec3>* vertices, float scale, glm::vec3 center, glm::quat rotate);
+    void genCrection(geometry& g, float scale, glm::vec3 center, glm::quat rotate);
     void fillFace(std::vector<GLushort>* indices, GLushort firstIndex, bool reverse);
     void fillExtrudedSquares(std::vector<GLushort>* indices, GLushort currentExtrusion);
 

@@ -55,7 +55,7 @@ void batchdrawer::updateObject(object_id id) {
 
     // Check to see if the branch will fit in the buffer. If not, give an error
     // TODO: error handling
-    size_t new_vbuf_size = size_vbuf + g.vertices->size() * sizeof(glm::vec3);
+    size_t new_vbuf_size = size_vbuf + g.vertices->size() * sizeof(vertex);
     size_t new_ibuf_size = size_ibuf + g.indices->size() * sizeof(GLushort);
     if(new_vbuf_size > MAX_BUF_SIZE || new_ibuf_size > MAX_BUF_SIZE) {
         std::cout << "Overrunning the buffer.." << std::endl;
@@ -107,7 +107,7 @@ void batchdrawer::restoreTo(ObjectInfo& oi) {
     size_vbuf = start_vbuf;
     size_ibuf = start_ibuf;
 
-    start_vertices = start_vbuf / sizeof(glm::vec3);
+    start_vertices = start_vbuf / sizeof(vertex);
 
     bufferDirty = false;
 }

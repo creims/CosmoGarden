@@ -2,9 +2,18 @@
 #define DRAWABLE_H
 
 #include <vector>
+#include <glm/glm.hpp>
+#include <GL/glew.h>
+
+struct vertex {
+    GLfloat position[3];
+    GLfloat normal[3];
+};
 
 struct geometry {
-    std::vector<glm::vec3>* vertices;
+    geometry();
+
+    std::vector<vertex>* vertices;
     std::vector<GLushort>* indices;
 
     void free() {

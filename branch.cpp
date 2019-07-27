@@ -57,24 +57,23 @@ void Branch::fillExtrudedSquares(vector<GLushort>* indices, GLushort currentExtr
     indices->push_back(p + 1);
 }
 
-void Branch::genCrection(vector<vec3>* vertices, float scale, vec3 center, quat rotate) {
+void Branch::genCrection(geometry& g, float scale, vec3 center, quat rotate) {
     float inc = 2 * PI_F / numPts;
     float a = 0.0;
 
     for (int i = 0; i < numPts; i++) {
         vec3 v{cosf(a), sinf(a), 0.0f};
-        v = v * scale;
-        v = rotate * v;
-        v = v + center;
+        vec3 n = rotate * v * scale;
+        v = n + center;
 
-        vertices->push_back(v);
+        g.vertices->emplace_back(vertex{v.x, v.y, v.z, n.x, n.y, n.z});
 
         a += inc;
     }
 }
 
 geometry Branch::genGeometry() {
-    geometry ret {.vertices = new vector<vec3>(), .indices = new vector<GLushort>()};
+    geometry ret;
 
     // Return empty vectors if the growth percent is low enough
     if(growthPercent < 0.00001f) return ret;
@@ -95,7 +94,7 @@ geometry Branch::genGeometry() {
     // Generate vertices
     for (int i = 0; i < numSections; ++i) {
         quat rotQuat = lookAt(b_dirs[i], WORLD_FRONT);
-        genCrection(ret.vertices, getScale(growthPercent, b_dists[i]), b_verts[i], rotQuat);
+        genCrection(ret, getScale(growthPercent, b_dists[i]), b_verts[i], rotQuat);
     }
 
     // Generate indices
