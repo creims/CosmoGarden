@@ -11,17 +11,27 @@ using glm::quat;
 
 refBranch defaultGenBranch() {
     static refBranch ref{
-            .c1 = vec3{0.6f, 0.0f, 0.0f},
-            .c2 = vec3{1.6f, 0.3f, 0.0f},
-            .c3 = vec3{1.8f, 1.4f, 0.0f},
+            0.6f, 0.0f, 0.0f,
+            1.6f, 0.3f, 0.0f,
+            1.8f, 1.4f, 0.0f,
     };
 
     return ref;
 }
 
+int defaultTimesToBranch() {
+    return 3;
+}
+
+int defaultNumBranches() {
+    return 3;
+}
+
 Tree::Tree(Bezier trunk, unsigned int ticks, batchdrawer& drawer)
 : trunk{std::move(trunk)}, trunkTicks{ticks}, lastTick{ticks}, drawer{drawer} {
     genBranch = defaultGenBranch;
+    getTimesToBranch = defaultTimesToBranch;
+    getNumBranches = defaultNumBranches;
 
     build();
 }
@@ -39,7 +49,7 @@ void Tree::build() {
     addBranch(trunk, 0.2f, 0, trunkTicks, 1.0f / trunkTicks);
 
     float branchPct = 0.7f;
-    furcate(3, 3, branchPct, 0.61f, trunk.pointAt(branchPct), 0, trunkTicks);
+    furcate(getTimesToBranch(), branchPct, 0.61f, trunk.pointAt(branchPct), 0, trunkTicks);
 
     for(int i = 0; i < branches.size(); i++) {
         branchData[i].id = drawer.registerObject(branches[i]);
@@ -55,9 +65,9 @@ void Tree::addBranch(Bezier& curve, float radius, unsigned int startTick, unsign
     branchData.emplace_back(branchInfo{INVALID_OBJECT_ID, startTick, endTick, tickIncrement, false});
 }
 
-void Tree::furcate(int timesToBranch, int numBranches, float pctAlong, float scale, posAndDir p,
-                   unsigned int pStartTick, unsigned int pTicks) {
-    if (timesToBranch < 1) return;
+void Tree::furcate(int timesToBranch, float pctAlong, float scale, posAndDir p, unsigned int pStartTick, unsigned int pTicks) {
+    int numBranches = getNumBranches();
+    if (timesToBranch < 1 || numBranches < 1) return;
 
     float inc = 2.0f * PI_F / numBranches;
     float angle = 0.0f;
@@ -69,9 +79,9 @@ void Tree::furcate(int timesToBranch, int numBranches, float pctAlong, float sca
         quat rot = rotationBetweenVectors(WORLD_UP, p.direction);
         rot = angleAxis(angle, p.direction) * rot;
 
-        vec3 newc1 = rot * (ref.c1 * scale) + p.position;
-        vec3 newc2 = rot * (ref.c2 * scale) + p.position;
-        vec3 newc3 = rot * (ref.c3 * scale) + p.position;
+        vec3 newc1 = rot * vec3(ref.x1, ref.y1, ref.z1) * scale + p.position;
+        vec3 newc2 = rot * vec3(ref.x2, ref.y2, ref.z2) * scale + p.position;
+        vec3 newc3 = rot * vec3(ref.x3, ref.y3, ref.z3) * scale + p.position;
 
         auto curve = Bezier{p.position, newc1, newc2, newc3, BEZIER_FLAT};
 
@@ -86,7 +96,7 @@ void Tree::furcate(int timesToBranch, int numBranches, float pctAlong, float sca
 
         angle += inc;
 
-        furcate(timesToBranch - 1, numBranches, newPct, scale * scale, curve.pointAt(newPct), newStartTick, newTicks);
+        furcate(timesToBranch - 1, newPct, scale * scale, curve.pointAt(newPct), newStartTick, newTicks);
     }
 }
 
@@ -120,7 +130,15 @@ void Tree::updateBranches() {
     }
 }
 
-void Tree::setBranchGenerator(refBranch (*gen)()) {
-    genBranch = gen;
+void Tree::setBranchGenerator(refBranchFn gen) {
+    genBranch = std::move(gen);
+}
+
+void Tree::setTimesToBranchFunc(intFn gen) {
+    getTimesToBranch = std::move(gen);
+}
+
+void Tree::setNumBranchesFunc(intFn gen) {
+    getNumBranches = std::move(gen);
 }
 

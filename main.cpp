@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 #include "SDL.h"
 #include <stdio.h>
+#include <iostream>
 #include "common.h"
 
 #ifdef EMSCRIPTEN
@@ -11,14 +12,6 @@
 
 static SDL_Window* window;
 static SDL_GLContext glContext;
-
-refBranch getBranch() {
-    return refBranch{
-            glm::vec3{0.3, 0.0, 0.0},
-            glm::vec3{1.0, -0.5, 0.0},
-            glm::vec3{2.0, -1.0, 0.0}
-    };
-}
 
 extern "C" int main(int argc, char** argv) {
     int w = 800;
@@ -67,7 +60,6 @@ extern "C" int main(int argc, char** argv) {
     emscripten_set_main_loop(update, 0, 1);
 #else
 
-    getSceneTree()->setBranchGenerator(getBranch);
     getSceneTree()->build();
     while(!shouldQuit()) {
         update();

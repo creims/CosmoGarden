@@ -121,7 +121,7 @@ void render() {
 
     glUniformMatrix4fv(branchShader.uniform_p, 1, GL_FALSE, (GLfloat*)&scene.p_matrix);
     glUniformMatrix4fv(branchShader.uniform_mv, 1, GL_FALSE, (GLfloat*)&scene.mv_matrix);
-    glUniform4f(branchShader.uniform_color, 1.0f, 0.0f, 0.0f, 1.0f);
+    glUniform4f(branchShader.uniform_color, 0.4f, 0.9f, 0.45f, 1.0f);
 
     scene.treeDrawer->prepareToDraw();
     glVertexAttribPointer(branchShader.attr_position, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, position));

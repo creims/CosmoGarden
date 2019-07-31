@@ -4,18 +4,13 @@
 #include <string>
 #include <glm/glm.hpp>
 #include "tree.h"
+#include "em_wrapper.h"
 
 using glm::vec3;
 
-struct RefBranchMemory {
-    float x1, y1, z1, x2, y2, z2, x3, y3, z3;
-};
-
-struct RefBranchMemory mem;
 emscripten::val errorHandler = emscripten::val::undefined();
 emscripten::val logHandler = emscripten::val::undefined();
 
-emscripten::val getBranchCPs = emscripten::val::undefined();
 
 Tree* tree;
 
@@ -30,41 +25,67 @@ void initLogger() {
     logHandler(msg);
 }
 
-std::string memToStr() {
-    std::ostringstream ss;
-    ss << mem.x1 << " " << mem.y1 << " " << mem.z1 << " "
-    << mem.x2 << " " << mem.y2 << " " << mem.z2 << " "
-    << mem.x3 << " " << mem.y3 << " " << mem.z3;
-    return ss.str();
-}
-
-refBranch genBranch() {
-    getBranchCPs();
-    return refBranch {
-        vec3{mem.x1, mem.y1, mem.z1},
-        vec3{mem.x2, mem.y2, mem.z2},
-        vec3{mem.x3, mem.y3, mem.z3}
-        };
-}
-
-void setBranchCPGenerator(emscripten::val getCPs) {
-    getBranchCPs = getCPs;
-    tree->setBranchGenerator(genBranch);
+// GENERAL
+void buildTree() {
     tree->build();
 }
 
-void setCPs(RefBranchMemory m) {
-    mem = m;
+// EXPOSED
+// Branch CP Generation
+em_wrapper<refBranch> branchCurveWrapper;
+
+void setBranchCurveFunc(emscripten::val f) {
+    branchCurveWrapper.setUpdate(f);
+    tree->setBranchGenerator(branchCurveWrapper.getCallback());
 }
+
+void setBranchCurve(refBranch b) {
+    branchCurveWrapper.set(b);
+}
+
+// Times to Branch
+em_wrapper<int> timesToBranchWrapper;
+
+void setTimesToBranchFunc(emscripten::val f) {
+    timesToBranchWrapper.setUpdate(f);
+    tree->setTimesToBranchFunc(timesToBranchWrapper.getCallback());
+}
+
+void setTimesToBranch(int n) {
+    timesToBranchWrapper.set(n);
+}
+
+// Num Branches
+em_wrapper<int> numBranchesWrapper;
+
+void setNumBranchesFunc(emscripten::val f) {
+    numBranchesWrapper.setUpdate(f);
+    tree->setNumBranchesFunc(numBranchesWrapper.getCallback());
+}
+
+void setNumBranches(int n) {
+    numBranchesWrapper.set(n);
+}
+
 
 EMSCRIPTEN_BINDINGS(my_module) {
         emscripten::function("initLogger", &initLogger);
-        emscripten::function("setBranchCPGenerator", &setBranchCPGenerator);
-        emscripten::function("setCPMemory", &setCPs);
+        emscripten::function("buildTree", &buildTree);
 
-        emscripten::value_array<RefBranchMemory>("RefBranchMemory")
-        .element(&RefBranchMemory::x1).element(&RefBranchMemory::y1).element(&RefBranchMemory::z1)
-        .element(&RefBranchMemory::x2).element(&RefBranchMemory::y2).element(&RefBranchMemory::z2)
-        .element(&RefBranchMemory::x3).element(&RefBranchMemory::y3).element(&RefBranchMemory::z3)
+        // Branch generation
+        emscripten::function("setBranchCurveFunc", &setBranchCurveFunc);
+        emscripten::function("setBranchCurve", &setBranchCurve);
+
+        // Furcation variables
+        emscripten::function("setTimesToBranchFunc", &setTimesToBranchFunc);
+        emscripten::function("setTimesToBranch", &setTimesToBranch);
+
+        emscripten::function("setNumBranchesFunc", &setNumBranchesFunc);
+        emscripten::function("setNumBranches", &setNumBranches);
+
+        emscripten::value_array<refBranch>("refBranch")
+        .element(&refBranch::x1).element(&refBranch::y1).element(&refBranch::z1)
+        .element(&refBranch::x2).element(&refBranch::y2).element(&refBranch::z2)
+        .element(&refBranch::x3).element(&refBranch::y3).element(&refBranch::z3)
         ;
 }
