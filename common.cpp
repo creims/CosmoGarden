@@ -15,6 +15,8 @@
 #include "arcball.h"
 #include "batchdrawer.h"
 
+#define DEFAULT_ZOOM 8.0f
+
 using glm::vec3;
 using glm::mat4;
 using glm::quat;
@@ -35,6 +37,7 @@ struct {
     Tree* tree;
     batchdrawer* treeDrawer;
     unsigned int ticks{0};
+    float zoom{1.0f};
 } scene;
 
 //TODO: replace with shader class?
@@ -60,10 +63,10 @@ bool initResources() {
     scene.tree = new Tree{
         Bezier{
             vec3{-0.6f, -2.0f, 0.0f},
-            vec3{-0.55f, -1.3f, 0.0f},
-            vec3{-0.4f, 0.7f, 0.0f},
-            vec3{-0.5f, 1.4f, 0.0f},
-    }, 100, *scene.treeDrawer};
+            vec3{-0.3f, -1.3f, 0.0f},
+            vec3{0.3f, 0.7f, 0.0f},
+            vec3{0.0f, 2.0f, 0.0f},
+    }, 50, *scene.treeDrawer};
 
     return true;
 }
@@ -86,10 +89,10 @@ bool cInit(int w, int h, SDL_Window* window) {
 }
 
 void updateMVP() {
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, -4.0));
-    glm::mat4 view = glm::lookAt(glm::vec3(1.0, 1.0, 1.0), glm::vec3(0.0, 0.0, -4.0), glm::vec3(0.0, 1.0, 0.0));
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0));
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, DEFAULT_ZOOM) * scene.zoom, glm::vec3(0.0, 0.0, 0.0), WORLD_UP);
 
-    scene.p_matrix = glm::perspective(45.0f, 1.0f * scene.width / scene.height, 0.1f, 10.0f);
+    scene.p_matrix = glm::perspective(glm::radians(45.0f), 1.0f * scene.width / scene.height, 0.1f, 1000.0f);
     scene.mv_matrix = view * model * toMat4(scene.camRotation);
 }
 
@@ -147,6 +150,12 @@ void update() {
         } else if (e.type == SDL_MOUSEMOTION) {
             if (scene.dragging) {
                 scene.camRotation = scene.arcball.update(e.motion.x, e.motion.y);
+            }
+        } else if(e.type == SDL_MOUSEWHEEL) {
+            if(e.wheel.y > 0) { // scroll up
+                scene.zoom *= 0.8;
+            } else if (e.wheel.y < 0) { // scroll down
+                scene.zoom *= 1.2;
             }
         }
     }
