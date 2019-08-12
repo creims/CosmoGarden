@@ -110,7 +110,7 @@ function furcate(depth, furcation, branch, startRatio) {
     let furcs = branchFactory.genFurcations(depth, furcation, branch);
 
     for(let furcNum = 0; furcNum < furcs.length; furcNum++) {
-        let numBranches = branchFactory.genNumBranches(depth, furcation, branch);
+        let numBranches = branchFactory.genNumBranches(depth, furcNum, branch);
         let furcStartRatio = furcs[furcNum];
 
         for(let branchNum = 0; branchNum < numBranches; branchNum++) {
