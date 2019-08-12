@@ -1,70 +1,19 @@
 #include <iostream>
+#include <algorithm>
 
 #include "tree.h"
 #include "consts.h"
 #include "math_utils.h"
 
-#define DEFAULT_NUMPTS 8
-
 using glm::vec3;
 using glm::quat;
 
-refBranch defaultGenBranch() {
-    static refBranch ref{
-            0.6f, 0.0f, 0.0f,
-            1.6f, 0.3f, 0.0f,
-            1.8f, 1.4f, 0.0f,
-    };
-
-    return ref;
+Tree::Tree(branchDescription const& trunk, batchdrawer& drawer)
+        : drawer{drawer} {
+    buildFromTrunk(trunk);
 }
 
-int defaultTimesToBranch() {
-    return 3;
-}
-
-int defaultNumBranches() {
-    return 3;
-}
-
-Tree::Tree(Bezier trunk, unsigned int ticks, batchdrawer& drawer)
-: trunk{std::move(trunk)}, trunkTicks{ticks}, lastTick{ticks}, drawer{drawer} {
-    genBranch = defaultGenBranch;
-    getTimesToBranch = defaultTimesToBranch;
-    getNumBranches = defaultNumBranches;
-
-    build();
-}
-
-void Tree::build() {
-    drawer.clear();
-    curves.clear();
-    branches.clear();
-    branchData.clear();
-
-    currTicks = 0;
-
-    curves.push_back(trunk);
-
-    addBranch(trunk, 0.2f, 0, trunkTicks, 1.0f / trunkTicks);
-
-    float branchPct = 0.7f;
-    furcate(getTimesToBranch(), branchPct, 0.61f, trunk.pointAt(branchPct), 0, trunkTicks);
-
-    for(int i = 0; i < branches.size(); i++) {
-        branchData[i].id = drawer.registerObject(branches[i]);
-    }
-}
-
-void Tree::addBranch(Bezier& curve, float radius, unsigned int startTick, unsigned int endTick, float tickIncrement) {
-    curves.push_back(curve);
-
-    branches.emplace_back(Branch{DEFAULT_NUMPTS, curve, radius});
-
-    // Register the trunk
-    branchData.emplace_back(branchInfo{INVALID_OBJECT_ID, startTick, endTick, tickIncrement, false});
-}
-
+/*
 void Tree::furcate(int timesToBranch, float pctAlong, float scale, posAndDir p, unsigned int pStartTick, unsigned int pTicks) {
     int numBranches = getNumBranches();
     if (timesToBranch < 1 || numBranches < 1) return;
@@ -98,47 +47,38 @@ void Tree::furcate(int timesToBranch, float pctAlong, float scale, posAndDir p, 
 
         furcate(timesToBranch - 1, newPct, scale * scale, curve.pointAt(newPct), newStartTick, newTicks);
     }
-}
+}*/
 
 // TODO: update to use ticks
 void Tree::setGrowth(float growthPercent) {
-    currTicks = std::min(lastTick, (unsigned int)(lastTick * growthPercent));
-    updateBranches();
+    currTicks = std::min(lastTick, (unsigned int) (lastTick * growthPercent));
 }
 
 void Tree::advance(unsigned int numTicks) {
-    if(numTicks < 1 || currTicks == lastTick)
+    if (numTicks < 1)
         return;
 
     currTicks = std::min(lastTick, currTicks + numTicks);
-    updateBranches();
+    drawable_id id = plant->advance(numTicks);
+    drawer.updateFrom(id);
 }
 
-void Tree::updateBranches() {
-    drawer.setBufferDirty();
-    for(int i = 0; i < curves.size(); i++) {
-        branchInfo info = branchData[i];
-        if(currTicks <= info.startTick || info.done)
-            continue;
+void Tree::buildFromTrunk(branchDescription const& trunk) {
+    drawer.clear();
+    plant = std::make_unique<Plant>(trunk);
+    std::vector<branchWrapper>& bs = plant->getBranches();
 
-        if(currTicks > info.endTick)
-            info.done = true;
+    // Because the drawer updates from the first branch which has changed,
+    // order the branches by startTick before registering them or they will not
+    // draw at the proper times
+    std::sort(bs.begin(), bs.end(),
+              [](branchWrapper const& a, branchWrapper const& b) {
+                  return a.startTick < b.startTick;
+              });
 
-        float pct = (currTicks - info.startTick) * info.increment;
-        branches[i].setGrowth(pct);
-        drawer.updateObject(info.id);
+    for (auto& d : bs) {
+        drawer.registerObject(d.branch);
     }
 }
 
-void Tree::setBranchGenerator(refBranchFn gen) {
-    genBranch = std::move(gen);
-}
-
-void Tree::setTimesToBranchFunc(intFn gen) {
-    getTimesToBranch = std::move(gen);
-}
-
-void Tree::setNumBranchesFunc(intFn gen) {
-    getNumBranches = std::move(gen);
-}
 

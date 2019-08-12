@@ -12,7 +12,7 @@ using glm::vec3;
 using glm::quat;
 
 Branch::Branch(unsigned int numPts, Bezier b, float scale)
-        : numPts{numPts}, globalScale{scale}, bezier{std::move(b)} {
+        : numPts{numPts}, thicknessScalar{scale}, bezier{std::move(b)} {
 }
 
 void Branch::fillFace(vector<GLushort>* indices, GLushort firstIndex, bool reverse) {
@@ -76,7 +76,8 @@ geometry Branch::genGeometry() {
     geometry ret;
 
     // Return empty vectors if the growth percent is low enough
-    if(growthPercent < 0.00001f) return ret;
+    if(growthPercent < 0.00001f)
+        return ret;
 
     // Make sure we don't grow over 1.0f
     if(growthPercent > 1.0f)
@@ -87,14 +88,17 @@ geometry Branch::genGeometry() {
     vector<vec3> b_verts = subcurve.getVertices();
     vector<vec3> b_dirs = subcurve.getDirections();
     vector<float> b_dists = subcurve.getDistances();
-    numSections = (unsigned int) b_verts.size();
+
+    auto numSections = (unsigned int) b_verts.size();
 
     ret.vertices->reserve(numPts * numSections);
 
     // Generate vertices
     for (int i = 0; i < numSections; ++i) {
+        // The direction of the bezier at the center of this cross section is the
+        // desired "front" for the face, so lookAt(direction, WORLD_FRONT) is the rotation quaternion
         quat rotQuat = lookAt(b_dirs[i], WORLD_FRONT);
-        genCrection(ret, getScale(growthPercent, b_dists[i]), b_verts[i], rotQuat);
+        genCrection(ret, getCrectionScale(growthPercent, b_dists[i]), b_verts[i], rotQuat);
     }
 
     // Generate indices
@@ -111,7 +115,7 @@ geometry Branch::genGeometry() {
     return ret;
 }
 
-void Branch::setBezier(Bezier& b) {
+void Branch::setBezier(Bezier const& b) {
     bezier = b;
 }
 
@@ -119,6 +123,6 @@ void Branch::setGrowth(float percent) {
     growthPercent = percent;
 }
 
-float Branch::getScale(float growthPct, float distAlongCurve) {
-    return globalScale * growthPct * powf(1.0f - distAlongCurve, 0.3f);
+float Branch::getCrectionScale(float growthPct, float distAlongCurve) {
+    return 0.4f * thicknessScalar * growthPct * powf(1.0f - distAlongCurve, 0.3f);
 }

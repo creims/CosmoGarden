@@ -15,7 +15,7 @@ using glm::quat;
  * Doesn’t normalise the output.
  * From http://lolengine.net/blog/2013/09/21/picking-orthogonal-vector-combing-coconuts
  * */
-vec3 orthogonal(vec3 v)
+vec3 orthogonal(vec3 const v)
 {
     return abs(v.x) > abs(v.z) ? vec3(-v.y, v.x, 0.0)
                                : vec3(0.0, -v.z, v.y);
@@ -64,8 +64,7 @@ quat rotationBetweenVectors(vec3 start, vec3 dest){
 
 // Returns a quaternion that will make your object looking towards 'direction'.
 // Similar to RotationBetweenVectors, but also controls the vertical orientation.
-// This assumes that at rest, the object faces +Z.
-// Beware, the first parameter is a direction, not the target point !
+// Beware, the first parameter is a direction, not the target point!
 quat lookAt(vec3 direction, vec3 desiredUp){
     if (length2(direction) < CLOSER_TO_0) {
         return quat();
@@ -76,12 +75,15 @@ quat lookAt(vec3 direction, vec3 desiredUp){
     vec3 right = cross(direction, desiredUp);
     if(length2(right) > CLOSER_TO_0) {
         desiredUp = cross(right, direction);
+    } else { // Direction and desiredUp are parallel
+        // TODO: consider whether opposite directions need a 180 degree rotation
+        return quat();
     }
 
-    // Find the rotation between the front of the object (that we assume towards +Z,
-    // but this depends on your model) and the desired direction
+    // Find the rotation between the front of the object and the desired direction
     quat rot1 = rotationBetweenVectors(WORLD_FRONT, direction);
-    // Because of the 1rst rotation, the up is probably completely screwed up.
+
+    // Because of the 1st rotation, the up is probably completely screwed up.
     // Find the rotation between the "up" of the rotated object, and the desired up
     vec3 newUp = rot1 * WORLD_UP;
     quat rot2 = rotationBetweenVectors(newUp, desiredUp);

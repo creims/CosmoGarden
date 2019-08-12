@@ -4,8 +4,9 @@
 constexpr size_t MAX_BUF_SIZE = 1024 * 1024;
 
 void checkError() {
-    if(glGetError() != GL_NO_ERROR) {
-        std::cout << "Error: ";
+    auto e = glGetError();
+    if(e != GL_NO_ERROR) {
+        std::cout << "Error: " << e;
     }
 }
 
@@ -25,66 +26,61 @@ batchdrawer::batchdrawer()
     checkError();
 }
 
-object_id batchdrawer::registerObject(Drawable& d) {
-    static object_id nextID = 1;
-
-    object_id objectID = nextID;
-    nextID += 1;
-
-    registeredObjects.emplace(objectID, ObjectInfo{d});
-
-    return objectID;
+void batchdrawer::registerObject(Drawable& d) {
+    drawable_id id = registeredObjects.size();
+    d.setID(id);
+    registeredObjects.emplace_back(DrawableInfo{d});
 }
 
-void batchdrawer::updateObject(object_id id) {
-    if(registeredObjects.count(id) == 0) {
+void batchdrawer::updateFrom(drawable_id id) {
+    if(id < 0 || id >= registeredObjects.size()) {
         return;
     }
 
-    ObjectInfo& info = registeredObjects.at(id);
+    restoreTo(registeredObjects[id]);
 
-    if(bufferDirty) {
-        restoreTo(info);
+    while(id < registeredObjects.size()) {
+        DrawableInfo& info = registeredObjects[id];
+
+        geometry g = info.drawable.genGeometry();
+
+        if (g.vertices->empty() || g.indices->empty()) {
+            return;
+        }
+
+        // Check to see if the branch will fit in the buffer. If not, give an error
+        // TODO: error handling
+        size_t new_vbuf_size = size_vbuf + g.vertices->size() * sizeof(vertex);
+        size_t new_ibuf_size = size_ibuf + g.indices->size() * sizeof(GLushort);
+        if (new_vbuf_size > MAX_BUF_SIZE || new_ibuf_size > MAX_BUF_SIZE) {
+            std::cout << "Overrunning the buffer.." << std::endl;
+            return;
+        }
+
+        info.vertexStart = size_vbuf;
+        info.indexStart = size_ibuf;
+
+        size_vbuf = new_vbuf_size;
+        size_ibuf = new_ibuf_size;
+
+        // Increment the index values by the number of vertices before it in the buffer
+        for (auto& index : *g.indices) {
+            index += start_vertices;
+        }
+
+        start_vertices += g.vertices->size();
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferSubData(GL_ARRAY_BUFFER, start_vbuf, size_vbuf - start_vbuf, g.vertices->data());
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, start_ibuf, size_ibuf - start_ibuf, g.indices->data());
+
+        start_vbuf = size_vbuf;
+        start_ibuf = size_ibuf;
+
+        id++;
     }
-
-    geometry g = info.object.genGeometry();
-
-    if(g.vertices->empty() || g.indices->empty()) {
-        return;
-    }
-
-    // Check to see if the branch will fit in the buffer. If not, give an error
-    // TODO: error handling
-    size_t new_vbuf_size = size_vbuf + g.vertices->size() * sizeof(vertex);
-    size_t new_ibuf_size = size_ibuf + g.indices->size() * sizeof(GLushort);
-    if(new_vbuf_size > MAX_BUF_SIZE || new_ibuf_size > MAX_BUF_SIZE) {
-        std::cout << "Overrunning the buffer.." << std::endl;
-        return;
-    }
-
-    info.vertexStart = size_vbuf;
-    info.indexStart = size_ibuf;
-
-    size_vbuf = new_vbuf_size;
-    size_ibuf = new_ibuf_size;
-
-    // Increment the index values by the number of vertices before it in the buffer
-    for(auto& index : *g.indices) {
-        index += start_vertices;
-    }
-
-    start_vertices += g.vertices->size();
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, start_vbuf, size_vbuf - start_vbuf, g.vertices->data());
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, start_ibuf, size_ibuf - start_ibuf, g.indices->data());
-
-    start_vbuf = size_vbuf;
-    start_ibuf = size_ibuf;
-
-    g.free();
 }
 
 void batchdrawer::prepareToDraw() {
@@ -96,11 +92,7 @@ void batchdrawer::draw() {
     glDrawElements(GL_TRIANGLES, size_ibuf / sizeof(GLushort), GL_UNSIGNED_SHORT, nullptr);
 }
 
-void batchdrawer::setBufferDirty() {
-    batchdrawer::bufferDirty = true;
-}
-
-void batchdrawer::restoreTo(ObjectInfo& oi) {
+void batchdrawer::restoreTo(DrawableInfo& oi) {
     start_vbuf = oi.vertexStart;
     start_ibuf = oi.indexStart;
 
@@ -108,8 +100,6 @@ void batchdrawer::restoreTo(ObjectInfo& oi) {
     size_ibuf = start_ibuf;
 
     start_vertices = start_vbuf / sizeof(vertex);
-
-    bufferDirty = false;
 }
 
 void batchdrawer::clear() {

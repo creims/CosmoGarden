@@ -28,7 +28,7 @@ extern "C" int main(int argc, char** argv) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    window = SDL_CreateWindow("title", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_OPENGL);
+    window = SDL_CreateWindow("CosmoGarden", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_OPENGL);
 
     glContext = SDL_GL_CreateContext(window);
 #endif
@@ -60,7 +60,6 @@ extern "C" int main(int argc, char** argv) {
     emscripten_set_main_loop(update, 0, 1);
 #else
 
-    getSceneTree()->build();
     while(!shouldQuit()) {
         update();
     }

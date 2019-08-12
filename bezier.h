@@ -26,12 +26,12 @@ public:
 
     void setFlatFactor(float _flatFactor);
 
-    posAndDir pointAt(float t);
-    float getLength() { return length; }
-    bool tooShort();
+    posAndDir pointAt(float t) const;
+    float getLength() const { return length; }
+    bool tooShort() const;
 
-    Bezier subCurve(float end);
-    Bezier subCurve(float start, float end);
+    Bezier subCurve(float end) const;
+    Bezier subCurve(float start, float end) const;
 
     std::vector<glm::vec3> getVertices();
     std::vector<glm::vec3> getDirections();

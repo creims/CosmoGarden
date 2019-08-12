@@ -15,7 +15,7 @@
 #include "arcball.h"
 #include "batchdrawer.h"
 
-#define DEFAULT_ZOOM 8.0f
+#define DEFAULT_ZOOM 12.0f
 
 using glm::vec3;
 using glm::mat4;
@@ -47,6 +47,46 @@ struct {
     GLint attr_position{0}, attr_normal{0};
 } branchShader;
 
+void initTestTree() {
+    branchDescription trunk{};
+    branchDescription branch1{};
+    branch1.startRatio = 0.6f;
+    branchDescription branch2 = branch1;
+    branch2.angle = 120.0f;
+    branchDescription branch3 = branch1;
+    branch3.angle = 240.0f;
+    trunk.children.push_back(branch1);
+    //trunk.children.push_back(branch2);
+    //trunk.children.push_back(branch3);
+
+    scene.tree = new Tree{trunk, *scene.treeDrawer};
+}
+
+void initDefaultTree() {
+    branchDescription trunk{};
+    trunk.curve = refBranch {
+        0.5f, -3.0f, -0.1f,
+        0.2f, -1.0f, 0.1f,
+        -0.5f, 2.0f, 0.3f,
+        0.0f, 3.5f, 0.1f
+    };
+    branchDescription branch1{};
+    branch1.scale = 0.61f;
+    branchDescription branch2 = branch1;
+    branch2.angle = 120.0f;
+    branchDescription branch3 = branch1;
+    branch3.angle = 240.0f;
+    trunk.children.push_back(branch1);
+    trunk.children.push_back(branch2);
+    trunk.children.push_back(branch3);
+    trunk.children[1].children.push_back(branch1);
+    trunk.children[1].children.push_back(branch2);
+    trunk.children[1].children.push_back(branch3);
+
+    scene.tree = new Tree{trunk, *scene.treeDrawer};
+    scene.tree->buildFromTrunk(trunk);
+}
+
 bool initResources() {
     // Shaders
     // TODO: do setup in shader object
@@ -60,13 +100,7 @@ bool initResources() {
     branchShader.uniform_color = glGetUniformLocation(branchShader.program, "color");
 
     scene.treeDrawer = new batchdrawer();
-    scene.tree = new Tree{
-        Bezier{
-            vec3{-0.6f, -2.0f, 0.0f},
-            vec3{-0.3f, -1.3f, 0.0f},
-            vec3{0.3f, 0.7f, 0.0f},
-            vec3{0.0f, 2.0f, 0.0f},
-    }, 50, *scene.treeDrawer};
+    initDefaultTree();
 
     return true;
 }

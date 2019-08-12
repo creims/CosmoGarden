@@ -3,9 +3,16 @@ const logField = document.querySelector('#log');
 const parseBtn = document.querySelector('#parse');
 const runBtn = document.querySelector('#run');
 
-let builtins = {};
+let trunk = {};
 let funcs = {};
-let plantCallbacks = {};
+let branchFactory = {
+    genFurcations: (depth, furcation, branch) => depth === 0 ? [0.2, 0.6] : [],
+    genNumBranches: (depth, furcation, branch) => 3,
+    genCurve: (depth, furcation, branch) => [0.0, 0.0, 0.0, 3.0, -3.0, 1.0, 0.1, 1.0, 0.0, 2.0, 0.0, 1.1],
+    genScale: (depth, furcation, branch) => Math.pow(0.6, depth),
+    genAngle: (depth, furcation, branch) => depth === 0 ? 0.0 : 120.0 * branch,
+    genTicksToGrow: (depth, furcation, branch) => 50,
+};
 
 const TDLParser = {
     // Array index 0: full match, 1: function name, 2: arguments, 3: function body
@@ -61,59 +68,17 @@ function callFuncs() {
 
     try {
         funcs['main']();
-        Module.buildTree();
+        let trunk = furcate(0, 0, 0, 0.0);
+        Module.buildPlant(trunk);
     } catch (err) {
         log(err);
     }
 }
 
-function register(builtinName, callback) {
-    const builtin = builtins[builtinName];
-
-    if (!builtin) {
-        log("No builtin called '" + builtinName + "' exists.");
-        return;
-    }
-
-    if (!callback) {
-        log("Trying to register invalid function to builtin '" + builtinName + ".'");
-        return;
-    }
-
-    registerPlantCallback(name, callback, builtin.set, builtin.gen);
-}
-
-// name (string): the name of the function (arbitrary but unique)
-// callback (function): the JavaScript function that returns the desired value (user defined)
-// setFunc (function): the C++ function that updates to the result of calling callback(), eg Module.setNumBranches
-// genFunc (function): the C++ function that hooks up the tree generator with the plant callback, eg Module.setNumBranchesFunc
-function registerPlantCallback(name, callback, setFunc, genFunc) {
-    plantCallbacks[name] = function () {
-        setFunc(callback());
-    };
-    genFunc(plantCallbacks[name]);
-}
-
 Module.onRuntimeInitialized = () => {
     Module.initLogger();
-    codeField.value =  '\/\/ Branch curves are an array of 9 floats corresponding to the second, third,\n\/\/ and fourth control point of a cubic Bezier spline (the first point is 0, 0, 0)\nfunction genCurve() @\n\tvar cps = [];\n\tfor(var i = 0; i < 9; i++) {\n\t\tcps.push(Math.random() * 2);\n\t}\n\treturn cps; \n@\n\n\/\/ timesToBranch is per tree and not per branch because...\n\/\/ when would it stop branching? Needs design if it\'s to vary\n\/\/ Expects an int\nfunction timesToBranch() @\n\treturn 3;\n@\n\n\/\/ When a branch splits, it splits into this many branches\n\/\/ Expects an int - floats are implicitly floored, eg 3.99 -> 3\nfunction numBranches() @\n\treturn Math.random() * 3 + 2;\n@\n\n\/\/ The code in \'main\' is run when you hit \'run\'\n\/\/ Built-in functions: log, register\n\/\/ Valid values for register\'s first parameter:\n\/\/ \"branchCurve\" \"timesToBranch\" \"numBranches\"\nfunction main() @\n\tlog(\"Building tree...\");\n\tregister(\"branchCurve\", funcs.genCurve);\n\tregister(\"timesToBranch\", funcs.timesToBranch);\n\tregister(\"numBranches\", funcs.numBranches);\n@';
+    codeField.value = '\/\/ array[n floats]\n\/\/ A list of float distances along the branch that\n\/\/ furcations occur at (between 0 and 1)\nfunction genFurcations(depth, furcation, branch) @\n\tif(depth === 0) return [0.2, 0.7];\n\tif(depth === 1) return [0.5];\n\treturn [];\n@\n\n\/\/ integer\n\/\/ The number of branches in a furcation\nfunction genNumBranches(depth, furcation, branch) @\n\tif(furcation === 0) return 3; \n\treturn 2;\n@\n\n\/\/ array[12 floats]\n\/\/ Branch curves are an array of 12 floats corresponding \n\/\/ to the X, Y, Z values of the 4 control points of a \n\/\/ quadratic bezier curve\nfunction genCurve(depth, furcation, branch) @\n\tif(depth === 0) return [0.0, -2.0, 0.0, -0.5, 0.0, 0.5, 0.5, 2.0, 0.8, -2.0, 3.0, 1.8];\n\n\tvar cps = [0.0, 0.0, 0.0];\n\tfor(var i = 0; i < 9; i++) {\n\t\tcps.push(Math.random() * 3);\n\t}\n\treturn cps; \n@\n\n\/\/ float\n\/\/ How big is the branch curve?\nfunction genScale(depth, furcation, branch) @\n\treturn Math.pow(0.62, depth);\n@\n\n\/\/ float\n\/\/ What is the angle, in degrees, of roll around the parent branch?\nfunction genAngle(depth, furcation, branch) @\n\treturn branch * 120.0;\n@\n\n\/\/ int\n\/\/ How many ticks will it take to grow the branch once it begins?\nfunction genTicksToGrow(depth, furcation, branch) @\n\treturn 50 + depth * 20 + branch * 10;\n@\n\n\/\/ The code in \'main\' is run when you hit \'run\'\nfunction main() @\n\tlog(\"Building tree...\");\n\tbranchFactory.genFurcations = funcs.genFurcations;\n\tbranchFactory.genNumBranches = funcs.genNumBranches;\n\tbranchFactory.genCurve = funcs.genCurve;\n\tbranchFactory.genScale = funcs.genScale;\n\tbranchFactory.genAngle = funcs.genAngle;\n\tbranchFactory.genTicksToGrow = funcs.genTicksToGrow;\n@';
     logField.value = 'Welcome to CosmoGarden!';
-
-
-    builtins = {
-        "branchCurve": {
-            set: Module.setBranchCurve,
-            gen: Module.setBranchCurveFunc
-        },
-        "timesToBranch" : {
-            set: Module.setTimesToBranch,
-            gen: Module.setTimesToBranchFunc
-        },
-        "numBranches" : {
-            set: Module.setNumBranches,
-            gen: Module.setNumBranchesFunc
-        },
-    };
 
     // Allow tab in textarea
     codeField.addEventListener('keydown', function (e) {
@@ -128,3 +93,30 @@ Module.onRuntimeInitialized = () => {
     parseBtn.addEventListener('click', parseTDL);
     runBtn.addEventListener('click', callFuncs);
 };
+
+function branchDescription(depth, furcation, branch, startRatio) {
+    let bd = {};
+    bd.startRatio = startRatio;
+    bd.curve = branchFactory.genCurve(depth, furcation, branch);
+    bd.scale = branchFactory.genScale(depth, furcation, branch);
+    bd.angle = branchFactory.genAngle(depth, furcation, branch);
+    bd.ticksToGrow = branchFactory.genTicksToGrow(depth, furcation, branch);
+    bd.children = Module.makeBranchVector();
+    return bd;
+}
+
+function furcate(depth, furcation, branch, startRatio) {
+    let newBranch = branchDescription(depth, furcation, branch, startRatio);
+    let furcs = branchFactory.genFurcations(depth, furcation, branch);
+
+    for(let furcNum = 0; furcNum < furcs.length; furcNum++) {
+        let numBranches = branchFactory.genNumBranches(depth, furcation, branch);
+        let furcStartRatio = furcs[furcNum];
+
+        for(let branchNum = 0; branchNum < numBranches; branchNum++) {
+            newBranch.children.push_back(furcate(depth + 1, furcNum, branchNum, furcStartRatio));
+        }
+    }
+
+    return newBranch;
+}

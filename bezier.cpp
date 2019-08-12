@@ -33,12 +33,12 @@ void Bezier::setFlatFactor(float _flatFactor) {
 }
 
 // Returns a bezier that is a subcurve from 0 to end
-Bezier Bezier::subCurve(float end) {
+Bezier Bezier::subCurve(float end) const {
     return subCurve(0.0f, end);
 }
 
 // Returns a bezier that is a subcurve from start to end
-Bezier Bezier::subCurve(float start, float end) {
+Bezier Bezier::subCurve(float start, float end) const {
     vec3 q0 = mix(c0, c1, start);
     vec3 q1 = mix(c1, c2, start);
     vec3 q2 = mix(c2, c3, start);
@@ -61,7 +61,7 @@ Bezier Bezier::subCurve(float start, float end) {
     return Bezier{s, q10, r10, s1};
 }
 
-posAndDir Bezier::pointAt(float t) {
+posAndDir Bezier::pointAt(float t) const {
     posAndDir ret{};
 
     vec3 c10 = mix(c0, c1, t);
@@ -130,7 +130,7 @@ std::vector<vec3> Bezier::getDirections() {
     return dirs;
 }
 
-bool Bezier::tooShort() {
+bool Bezier::tooShort() const {
     return length < BEZIER_TOO_SHORT;
 }
 
