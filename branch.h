@@ -2,6 +2,7 @@
 #define BRANCH_H
 
 #include <vector>
+#include <functional>
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>
@@ -9,6 +10,8 @@
 
 #include "bezier.h"
 #include "drawable.h"
+
+typedef std::function<float(float, float)> crectionScaleFunc;
 
 class Branch : public Drawable {
 public:
@@ -18,6 +21,8 @@ public:
     void setBezier(Bezier const& b);
     Bezier const& getBezier() { return bezier; };
     void setGrowth(float percent);
+
+    void setCrectionScaleFunc(crectionScaleFunc f);
 
     geometry genGeometry() override;
 
@@ -31,7 +36,7 @@ private:
     void fillFace(std::vector<GLushort>* indices, GLushort firstIndex, bool reverse);
     void fillExtrudedSquares(std::vector<GLushort>* indices, GLushort currentExtrusion);
 
-    float getCrectionScale(float growthPct, float distAlongCurve);
+    crectionScaleFunc getCrectionScale;
 };
 
 #endif //BRANCH_H

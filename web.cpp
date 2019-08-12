@@ -8,8 +8,8 @@
 
 using glm::vec3;
 
-emscripten::val errorHandler = emscripten::val::undefined();
 emscripten::val logHandler = emscripten::val::undefined();
+emscripten::val branchScaleHandler = emscripten::val::undefined();
 
 Tree* tree;
 
@@ -17,34 +17,32 @@ void setActiveTree(Tree* t) {
     tree = t;
 }
 
-void initLogger() {
+void initAll() {
     logHandler = emscripten::val::global("log");
+    branchScaleHandler = emscripten::val::global("getBranchScale");
 
     std::string msg = "Initialization successful.";
     logHandler(msg);
 }
 
-// GENERAL
-void buildPlant(branchDescription const& trunk) {
-    tree->buildFromTrunk(trunk);
+float getBranchScalar(unsigned int id, float growthRatio, float distAlongCurve) {
+    float scalar = branchScaleHandler(id, growthRatio, distAlongCurve).as<float>();
+    return scalar;
 }
 
-/*
-struct branchDescription {
-    refBranch curve{-0.5f, 1.0f, 0.5f, 0.5f, 2.0f, 0.8f, -2.0f, 3.0f, 1.8f};
-    float startRatio{0.6f};
-    float scale{1.0f};
-    float angle{0.0f};
-    unsigned int ticksToGrow{50};
-    std::vector<branchDescription> children{};
-};
-*/
+void registerCrectionScaleFuncs(branchDescription& branch) {
+    branch.getCrectionScale = [id = branch.id](float growthRatio, float distAlongCurve) -> float {
+            return getBranchScalar(id, growthRatio, distAlongCurve);
+    };
 
-void logBranch(branchDescription const& b) {
-    logHandler(b.children.size());
-    for(auto& child : b.children) {
-        logBranch(child);
+    for(auto& child : branch.children) {
+        registerCrectionScaleFuncs(child);
     }
+}
+
+void buildPlant(branchDescription& trunk) {
+    registerCrectionScaleFuncs(trunk);
+    tree->buildFromTrunk(trunk);
 }
 
 std::vector<branchDescription> makeBranchVector() {
@@ -52,9 +50,8 @@ std::vector<branchDescription> makeBranchVector() {
 }
 
 EMSCRIPTEN_BINDINGS(my_module) {
-        emscripten::function("initLogger", &initLogger);
+        emscripten::function("initAll", &initAll);
         emscripten::function("buildPlant", &buildPlant);
-        emscripten::function("logBranch", &logBranch);
         emscripten::function("makeBranchVector", &makeBranchVector);
 
         emscripten::value_array<refBranch>("refBranch")
@@ -67,6 +64,7 @@ EMSCRIPTEN_BINDINGS(my_module) {
         emscripten::register_vector<branchDescription>("vector<branchDescription>");
 
         emscripten::value_object<branchDescription>("branchDescription")
+        .field("id", &branchDescription::id)
         .field("curve", &branchDescription::curve)
         .field("startRatio", &branchDescription::startRatio)
         .field("scale", &branchDescription::scale)

@@ -25,6 +25,12 @@ void Plant::build(branchDescription const& trunk) {
 void Plant::addBranch(branchDescription const& desc, posAndDir const& furcationPoint, unsigned int const branchStartTick) {
     unsigned int endTick = branchStartTick + desc.ticksToGrow;
     Branch b = makeBranch(desc.curve, desc.scale, desc.angle, furcationPoint.position, furcationPoint.direction);
+
+    // Register the getCrectionScale function if it exists on the description
+    if(desc.getCrectionScale != nullptr) {
+        b.setCrectionScaleFunc(desc.getCrectionScale);
+    }
+
     branches.emplace_back(branchWrapper{(int)branches.size(), b, branchStartTick, endTick, desc.ticksToGrow});
 
     for (auto const& child : desc.children) {

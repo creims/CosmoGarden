@@ -11,8 +11,13 @@ using std::vector;
 using glm::vec3;
 using glm::quat;
 
+float defaultCrectionScale(float growthPct, float distAlongCurve) {
+    return growthPct * powf(1.0f - distAlongCurve, 0.3f);
+}
+
 Branch::Branch(unsigned int numPts, Bezier b, float scale)
         : numPts{numPts}, thicknessScalar{scale}, bezier{std::move(b)} {
+    getCrectionScale = defaultCrectionScale;
 }
 
 void Branch::fillFace(vector<GLushort>* indices, GLushort firstIndex, bool reverse) {
@@ -98,7 +103,7 @@ geometry Branch::genGeometry() {
         // The direction of the bezier at the center of this cross section is the
         // desired "front" for the face, so lookAt(direction, WORLD_FRONT) is the rotation quaternion
         quat rotQuat = lookAt(b_dirs[i], WORLD_FRONT);
-        genCrection(ret, getCrectionScale(growthPercent, b_dists[i]), b_verts[i], rotQuat);
+        genCrection(ret, thicknessScalar * getCrectionScale(growthPercent, b_dists[i]), b_verts[i], rotQuat);
     }
 
     // Generate indices
@@ -123,6 +128,7 @@ void Branch::setGrowth(float percent) {
     growthPercent = percent;
 }
 
-float Branch::getCrectionScale(float growthPct, float distAlongCurve) {
-    return 0.4f * thicknessScalar * growthPct * powf(1.0f - distAlongCurve, 0.3f);
+void Branch::setCrectionScaleFunc(crectionScaleFunc f) {
+    getCrectionScale = std::move(f);
 }
+

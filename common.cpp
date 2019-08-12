@@ -64,14 +64,22 @@ void initTestTree() {
 
 void initDefaultTree() {
     branchDescription trunk{};
-    trunk.curve = refBranch {
-        0.5f, -3.0f, -0.1f,
-        0.2f, -1.0f, 0.1f,
-        -0.5f, 2.0f, 0.3f,
-        0.0f, 3.5f, 0.1f
+    trunk.curve = refBranch{
+            0.5f, -3.0f, -0.1f,
+            0.2f, -1.0f, 0.1f,
+            -0.5f, 2.0f, 0.3f,
+            0.0f, 3.5f, 0.1f
     };
+
+    crectionScaleFunc def = [](float growthPct, float distAlongCurve) {
+        return 0.4 * growthPct * powf(1.0f - distAlongCurve, 0.3f);
+    };
+
+    trunk.getCrectionScale = def;
+
     branchDescription branch1{};
     branch1.scale = 0.61f;
+    branch1.getCrectionScale = def;
     branchDescription branch2 = branch1;
     branch2.angle = 120.0f;
     branchDescription branch3 = branch1;
@@ -156,13 +164,15 @@ void render() {
     glEnableVertexAttribArray(branchShader.attr_position);
     glEnableVertexAttribArray(branchShader.attr_normal);
 
-    glUniformMatrix4fv(branchShader.uniform_p, 1, GL_FALSE, (GLfloat*)&scene.p_matrix);
-    glUniformMatrix4fv(branchShader.uniform_mv, 1, GL_FALSE, (GLfloat*)&scene.mv_matrix);
+    glUniformMatrix4fv(branchShader.uniform_p, 1, GL_FALSE, (GLfloat*) &scene.p_matrix);
+    glUniformMatrix4fv(branchShader.uniform_mv, 1, GL_FALSE, (GLfloat*) &scene.mv_matrix);
     glUniform4f(branchShader.uniform_color, 0.4f, 0.9f, 0.45f, 1.0f);
 
     scene.treeDrawer->prepareToDraw();
-    glVertexAttribPointer(branchShader.attr_position, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, position));
-    glVertexAttribPointer(branchShader.attr_normal, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, normal));
+    glVertexAttribPointer(branchShader.attr_position, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),
+                          (void*) offsetof(vertex, position));
+    glVertexAttribPointer(branchShader.attr_normal, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),
+                          (void*) offsetof(vertex, normal));
     scene.treeDrawer->draw();
 
     glDisableVertexAttribArray(branchShader.attr_position);
@@ -185,8 +195,8 @@ void update() {
             if (scene.dragging) {
                 scene.camRotation = scene.arcball.update(e.motion.x, e.motion.y);
             }
-        } else if(e.type == SDL_MOUSEWHEEL) {
-            if(e.wheel.y > 0) { // scroll up
+        } else if (e.type == SDL_MOUSEWHEEL) {
+            if (e.wheel.y > 0) { // scroll up
                 scene.zoom *= 0.8;
             } else if (e.wheel.y < 0) { // scroll down
                 scene.zoom *= 1.2;

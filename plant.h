@@ -2,6 +2,7 @@
 #define PLANT_H
 
 #include <vector>
+#include <functional>
 
 #include "branch.h"
 
@@ -21,12 +22,14 @@ struct refBranch {
 };
 
 struct branchDescription {
+    unsigned int id{0};
     refBranch curve{-0.5f, 1.0f, 0.5f, 0.5f, 2.0f, 0.8f, -2.0f, 3.0f, 1.8f};
     float startRatio{0.6f};
     float scale{1.0f};
     float angle{0.0f};
     unsigned int ticksToGrow{50};
     std::vector<branchDescription> children{};
+    crectionScaleFunc getCrectionScale {};
 };
 
 // TODO: just add tick info to branches instead of having a wrapper?
