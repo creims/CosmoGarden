@@ -9,7 +9,7 @@ void Arcball::setBounds(float newWidth, float newHeight) {
     adjustHeight = 1.0f / ((newHeight - 1.0f) * 0.5f);
 }
 
-void Arcball::startDrag(float x, float y, quat currentRotation) {
+void Arcball::startDrag(float x, float y) {
     // Initialize our reference vector (initial point on sphere)
     startVector = mapToSphere(x, y);
 
@@ -17,12 +17,12 @@ void Arcball::startDrag(float x, float y, quat currentRotation) {
     startRotation = currentRotation;
 }
 
-quat Arcball::update(float x, float y) {
+void Arcball::update(float x, float y) {
     // Map the new point to the sphere
     vec3 currentVector = mapToSphere(x, y);
 
     // The new rotation is the old rotation times the new rotation (reverse multiplication order)
-    return rotationBetweenVectors(startVector, currentVector) * startRotation;
+    currentRotation = rotationBetweenVectors(startVector, currentVector) * startRotation;
 }
 
 vec3 Arcball::mapToSphere(float x, float y) {
@@ -50,4 +50,12 @@ vec3 Arcball::mapToSphere(float x, float y) {
     }
 
     return result;
+}
+
+quat Arcball::getRotation() {
+    return currentRotation;
+}
+
+void Arcball::reset() {
+    currentRotation = quat{};
 }

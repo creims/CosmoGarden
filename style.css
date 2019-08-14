@@ -4,8 +4,8 @@ body {
 
 .display {
     display: flex;
-    width: 90vw;
-    height: 90vh;
+    width: 95vw;
+    height: 95vh;
 }
 
 .controls {
@@ -27,7 +27,7 @@ textarea {
 }
 
 button {
-    width: 40%;
+    width: 45%;
     justify-self: center;
 
     border: 3px solid black;
@@ -36,5 +36,9 @@ button {
     background-color: cornflowerblue;
     font-weight: bolder;
     color: black;
-    font-size: 2em;
+    font-size: 3.5vmin;
+}
+
+#canvas {
+    width: 60vw;
 }

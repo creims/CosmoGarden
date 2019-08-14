@@ -3,8 +3,7 @@
 #include <sstream>
 #include <string>
 #include <glm/glm.hpp>
-#include "tree.h"
-#include "em_wrapper.h"
+#include "src/tree.h"
 
 using glm::vec3;
 

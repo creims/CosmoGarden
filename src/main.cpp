@@ -7,7 +7,8 @@
 
 #ifdef EMSCRIPTEN
 #   include "emscripten.h"
-#   include "web.cpp"
+#   include "emscripten/html5.h"
+#   include "../web.cpp"
 #endif
 
 static SDL_Window* window;
@@ -18,7 +19,8 @@ extern "C" int main(int argc, char** argv) {
     int h = 800;
 #ifdef EMSCRIPTEN
     SDL_Renderer* renderer = NULL;
-    SDL_CreateWindowAndRenderer(w, h, SDL_WINDOW_OPENGL, &window, &renderer);
+    emscripten_get_canvas_element_size("#canvas", &w, &h);
+    SDL_CreateWindowAndRenderer(w, h, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE, &window, &renderer);
 #else
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         printf("SDL init error: %s\n", SDL_GetError());
@@ -28,7 +30,7 @@ extern "C" int main(int argc, char** argv) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    window = SDL_CreateWindow("CosmoGarden", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_OPENGL);
+    window = SDL_CreateWindow("CosmoGarden", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
     glContext = SDL_GL_CreateContext(window);
 #endif
@@ -38,8 +40,6 @@ extern "C" int main(int argc, char** argv) {
         printf("GLEW init error: %s\n", glewGetErrorString(glewStatus));
         return 1;
     }
-
-    glViewport(0, 0, w, h);
 
     if(!cInit(w, h, window)) {
         return 1;

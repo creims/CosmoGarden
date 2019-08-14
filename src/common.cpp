@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include <memory>
 #include <math.h>
 #include <SDL.h>
 #include <GL/glew.h>
@@ -25,17 +26,16 @@ static bool quit = false;
 
 // TODO: replace with scene class
 struct {
-    int width, height;
     SDL_Window* window;
 
     glm::mat4 p_matrix, mv_matrix;
 
     Arcball arcball{};
-    quat camRotation{QUAT_IDENTITY};
+    //quat camRotation{QUAT_IDENTITY};
 
     bool dragging{false};
     Tree* tree;
-    batchdrawer* treeDrawer;
+    std::unique_ptr<batchdrawer> treeDrawer;
     unsigned int ticks{0};
     float zoom{1.0f};
 } scene;
@@ -107,35 +107,39 @@ bool initResources() {
     branchShader.uniform_mv = glGetUniformLocation(branchShader.program, "mv_matrix");
     branchShader.uniform_color = glGetUniformLocation(branchShader.program, "color");
 
-    scene.treeDrawer = new batchdrawer();
+    scene.treeDrawer = std::make_unique<batchdrawer>();
     initDefaultTree();
 
     return true;
 }
 
+void resizeWindow(int w, int h) {
+    scene.p_matrix = glm::perspective(glm::radians(45.0f), 1.0f * w / h, 0.1f, 1000.0f);
+    glViewport(0, 0, w, h);
+}
+
 bool cInit(int w, int h, SDL_Window* window) {
+    resizeWindow(w, h);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    scene.width = w;
-    scene.height = h;
     scene.window = window;
 
+    // Our geometry generation winds clockwise, while the default is anti-clockwise
     glFrontFace(GL_CW);
 
     // Initialize arcball
-    scene.arcball.setBounds((float) scene.width, (float) scene.height);
+    scene.arcball.setBounds((float) w, (float) h);
 
     return true;
 }
 
-void updateMVP() {
+void updateMV() {
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0));
     glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, DEFAULT_ZOOM) * scene.zoom, glm::vec3(0.0, 0.0, 0.0), WORLD_UP);
 
-    scene.p_matrix = glm::perspective(glm::radians(45.0f), 1.0f * scene.width / scene.height, 0.1f, 1000.0f);
-    scene.mv_matrix = view * model * toMat4(scene.camRotation);
+    scene.mv_matrix = view * model * toMat4(scene.arcball.getRotation());
 }
 
 void updateTicks() {
@@ -157,7 +161,7 @@ void render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //TODO: do only when necessary
-    updateMVP();
+    updateMV();
 
     // Draw trees
     glUseProgram(branchShader.program);
@@ -188,18 +192,22 @@ void update() {
             quit = true;
         } else if (e.type == SDL_MOUSEBUTTONDOWN) {
             scene.dragging = true;
-            scene.arcball.startDrag(e.button.x, e.button.y, scene.camRotation);
+            scene.arcball.startDrag(e.button.x, e.button.y);
         } else if (e.type == SDL_MOUSEBUTTONUP) {
             scene.dragging = false;
         } else if (e.type == SDL_MOUSEMOTION) {
             if (scene.dragging) {
-                scene.camRotation = scene.arcball.update(e.motion.x, e.motion.y);
+                scene.arcball.update(e.motion.x, e.motion.y);
             }
         } else if (e.type == SDL_MOUSEWHEEL) {
             if (e.wheel.y > 0) { // scroll up
                 scene.zoom *= 0.8;
             } else if (e.wheel.y < 0) { // scroll down
                 scene.zoom *= 1.2;
+            }
+        } else if (e.type == SDL_WINDOWEVENT) {
+            if(e.window.event == SDL_WINDOWEVENT_RESIZED) {
+                resizeWindow(e.window.data1, e.window.data2);
             }
         }
     }

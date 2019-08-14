@@ -3,7 +3,7 @@ project(CosmoGarden)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(CosmoGarden main.cpp branch.cpp branch.h common.cpp common.h shader_utils.cpp shader_utils.h consts.h math_utils.cpp math_utils.h drawable.h bezier.cpp bezier.h tree.cpp tree.h arcball.cpp arcball.h batchdrawer.cpp batchdrawer.h drawable.cpp plant.cpp plant.h)
+add_executable(CosmoGarden src/main.cpp src/branch.cpp src/branch.h src/common.cpp src/common.h src/shader_utils.cpp src/shader_utils.h src/consts.h src/math_utils.cpp src/math_utils.h src/drawable.h src/bezier.cpp src/bezier.h src/tree.cpp src/tree.h src/arcball.cpp src/arcball.h src/batchdrawer.cpp src/batchdrawer.h src/drawable.cpp src/plant.cpp src/plant.h)
 
 find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)

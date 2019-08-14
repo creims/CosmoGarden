@@ -3,6 +3,7 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
+#include "consts.h"
 
 class Arcball {
 public:
@@ -12,15 +13,22 @@ public:
     void setBounds(float newWidth, float newHeight);
 
     // Call when drag starts
-    void startDrag(float x, float y, glm::quat currentRotation);
+    void startDrag(float x, float y);
 
     // Call when rendering
-    glm::quat update(float x, float y);
+    void update(float x, float y);
+
+    // Get the current rotation
+    glm::quat getRotation();
+
+    // Reset the arcball's rotation
+    void reset();
 
 private:
     float adjustWidth{}, adjustHeight{};
     glm::vec3 startVector{};
     glm::quat startRotation{};
+    glm::quat currentRotation{QUAT_IDENTITY};
 
     glm::vec3 mapToSphere(float x, float y);
 };
