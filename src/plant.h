@@ -9,6 +9,7 @@
 typedef int branch_id;
 constexpr branch_id INVALID_BRANCH_ID = -1;
 
+// TODO: Make this a vector<vec3> and just do size checking
 struct refBranch {
     refBranch() = default;
     refBranch(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3)
@@ -23,7 +24,8 @@ struct refBranch {
 
 struct branchDescription {
     unsigned int id{0};
-    refBranch curve{-0.5f, 1.0f, 0.5f, 0.5f, 2.0f, 0.8f, -2.0f, 3.0f, 1.8f};
+    crection crossSection{};
+    refBranch curve{1.0f, 0.0f, 0.0f, 2.0f, 2.0f, 0.0f, 3.0f, 3.0f, 0.0f};
     float startRatio{0.6f};
     float scale{1.0f};
     float angle{0.0f};

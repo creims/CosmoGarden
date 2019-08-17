@@ -79,7 +79,7 @@ posAndDir Bezier::pointAt(float t) const {
     // TODO: reconsider special cases where len(direction) == 0.0
     // Also applies to normals added during deCasteljau
     if(all(isnan(ret.direction))) {
-        ret.direction = normalize(p - mix(c2, c3, 0.999f));
+        ret.direction = normalize(mix(c2, c3, 0.999f) - p);
     }
 
     return ret;
@@ -97,7 +97,8 @@ void Bezier::deCasteljau(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float startDist, fl
     endDist = std::min(endDist, 1.0f);
     if (isFlatEnough(p0, p1, p2, p3, flatFactor) && endDist - dists.back() < minDistance) {
         verts.push_back(p3);
-        dirs.push_back(normalize(p3 - p2));
+        vec3 dir = p3 - p2;
+        dirs.push_back(normalize(dir));
         dists.push_back(endDist);
     } else {
         vec3 q0 = mix(p0, p1, 0.5f);

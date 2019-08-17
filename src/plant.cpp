@@ -19,7 +19,7 @@ void Plant::build(branchDescription const& trunk) {
     currTicks = 0;
     totalTicks = 0;
 
-    addBranch(trunk, posAndDir{VEC3_ORIGIN, WORLD_FRONT}, 0);
+    addBranch(trunk, posAndDir{VEC3_ORIGIN, WORLD_UP}, 0);
 }
 
 void Plant::addBranch(branchDescription const& desc, posAndDir const& furcationPoint, unsigned int const branchStartTick) {
@@ -29,6 +29,10 @@ void Plant::addBranch(branchDescription const& desc, posAndDir const& furcationP
     // Register the getCrectionScale function if it exists on the description
     if(desc.getCrectionScale != nullptr) {
         b.setCrectionScaleFunc(desc.getCrectionScale);
+    }
+
+    if(desc.crossSection.size() > 1) {
+        b.setCrection(desc.crossSection);
     }
 
     branches.emplace_back(branchWrapper{(int)branches.size(), b, branchStartTick, endTick, desc.ticksToGrow});
@@ -46,7 +50,7 @@ void Plant::addBranch(branchDescription const& desc, posAndDir const& furcationP
 
 Branch Plant::makeBranch(refBranch const& ref, float const scale, float const angle, vec3 const& position, vec3 const& direction) {
     // TODO: a = 0 roll is random due to noise of rotationBetweenVectors; use lookAt?
-    quat rot = rotationBetweenVectors(WORLD_FRONT, direction);
+    quat rot = rotationBetweenVectors(WORLD_UP, direction);
     rot = angleAxis(glm::radians(angle), direction) * rot;
 
     vec3 c0 = rot * vec3(ref.x0, ref.y0, ref.z0) * scale + position;
@@ -55,7 +59,7 @@ Branch Plant::makeBranch(refBranch const& ref, float const scale, float const an
     vec3 c3 = rot * vec3(ref.x3, ref.y3, ref.z3) * scale + position;
 
     auto curve = Bezier{c0, c1, c2, c3, BEZIER_FLAT};
-    return Branch{8, curve, scale};
+    return Branch{curve, scale, direction};
 }
 
 branch_id Plant::advance(unsigned int ticks) {

@@ -31,7 +31,6 @@ struct {
     glm::mat4 p_matrix, mv_matrix;
 
     Arcball arcball{};
-    //quat camRotation{QUAT_IDENTITY};
 
     bool dragging{false};
     Tree* tree;
@@ -49,21 +48,6 @@ struct {
 
 void initTestTree() {
     branchDescription trunk{};
-    branchDescription branch1{};
-    branch1.startRatio = 0.6f;
-    branchDescription branch2 = branch1;
-    branch2.angle = 120.0f;
-    branchDescription branch3 = branch1;
-    branch3.angle = 240.0f;
-    trunk.children.push_back(branch1);
-    //trunk.children.push_back(branch2);
-    //trunk.children.push_back(branch3);
-
-    scene.tree = new Tree{trunk, *scene.treeDrawer};
-}
-
-void initDefaultTree() {
-    branchDescription trunk{};
     trunk.curve = refBranch{
             0.5f, -3.0f, -0.1f,
             0.2f, -1.0f, 0.1f,
@@ -71,13 +55,38 @@ void initDefaultTree() {
             0.0f, 3.5f, 0.1f
     };
 
+    trunk.ticksToGrow = 0;
+    /*
+    branchDescription branch1{};
+    branch1.startRatio = 0.6f;
+    branchDescription branch2 = branch1;
+    branch2.angle = 120.0f;
+    branchDescription branch3 = branch1;
+    branch3.angle = 240.0f;
+    trunk.children.push_back(branch1);
+    trunk.children.push_back(branch2);
+    trunk.children.push_back(branch3);*/
+
+    scene.tree = new Tree{trunk, *scene.treeDrawer};
+}
+
+void initDefaultTree() {
+    branchDescription trunk{};
+    trunk.curve = refBranch{
+            0.5f, -3.0f, 0.1f,
+            0.2f, -1.0f, 0.1f,
+            0.5f, 2.0f, 0.3f,
+            0.0f, 3.5f, 0.1f
+    };
+
     crectionScaleFunc def = [](float growthPct, float distAlongCurve) {
-        return 0.4 * growthPct * powf(1.0f - distAlongCurve, 0.3f);
+        return 0.4 * growthPct * powf(1.0 - distAlongCurve, 0.3f);
     };
 
     trunk.getCrectionScale = def;
 
     branchDescription branch1{};
+    branch1.crossSection.assign({vec3{-1.0f, 0.0f, 0.0f}, vec3{0.0f, 0.5f, 0.0f}, vec3{1.0f, 0.0f, 0.0f}, vec3{0.0f, -0.5f, 0.0f}});
     branch1.scale = 0.61f;
     branch1.getCrectionScale = def;
     branchDescription branch2 = branch1;

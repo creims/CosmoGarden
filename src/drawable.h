@@ -28,7 +28,7 @@ struct geometry {
 
 class Drawable {
 public:
-    virtual geometry genGeometry() = 0;
+    virtual geometry genGeometry() const = 0;
     void setID(drawable_id newID);
     drawable_id getID();
 private:

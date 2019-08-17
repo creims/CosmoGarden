@@ -48,10 +48,15 @@ std::vector<branchDescription> makeBranchVector() {
     return std::vector<branchDescription>{};
 }
 
+std::vector<vec3> makeVertexVector() {
+    return std::vector<vec3>{};
+}
+
 EMSCRIPTEN_BINDINGS(my_module) {
         emscripten::function("initAll", &initAll);
         emscripten::function("buildPlant", &buildPlant);
         emscripten::function("makeBranchVector", &makeBranchVector);
+        emscripten::function("makeVertexVector", &makeVertexVector);
 
         emscripten::value_array<refBranch>("refBranch")
         .element(&refBranch::x0).element(&refBranch::y0).element(&refBranch::z0)
@@ -61,14 +66,22 @@ EMSCRIPTEN_BINDINGS(my_module) {
         ;
 
         emscripten::register_vector<branchDescription>("vector<branchDescription>");
+        emscripten::register_vector<vec3>("vector<vec3>");
 
         emscripten::value_object<branchDescription>("branchDescription")
         .field("id", &branchDescription::id)
+        .field("crossSection", &branchDescription::crossSection)
         .field("curve", &branchDescription::curve)
         .field("startRatio", &branchDescription::startRatio)
         .field("scale", &branchDescription::scale)
         .field("angle", &branchDescription::angle)
         .field("ticksToGrow", &branchDescription::ticksToGrow)
         .field("children", &branchDescription::children)
+        ;
+
+        emscripten::value_object<vec3>("vec3")
+        .field("x", &vec3::x)
+        .field("y", &vec3::y)
+        .field("z", &vec3::z)
         ;
 }
