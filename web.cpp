@@ -52,11 +52,28 @@ std::vector<vec3> makeVertexVector() {
     return std::vector<vec3>{};
 }
 
+// Disable keyboard events to allow the browser window to process keypresses
+void disableKeyboard() {
+    SDL_EventState(SDL_TEXTINPUT, SDL_DISABLE);
+    SDL_EventState(SDL_KEYDOWN, SDL_DISABLE);
+    SDL_EventState(SDL_KEYUP, SDL_DISABLE);
+}
+
+// Enable keyboard events again
+void enableKeyboard() {
+    SDL_EventState(SDL_TEXTINPUT, SDL_ENABLE);
+    SDL_EventState(SDL_KEYDOWN, SDL_ENABLE);
+    SDL_EventState(SDL_KEYUP, SDL_ENABLE);
+}
+
 EMSCRIPTEN_BINDINGS(my_module) {
         emscripten::function("initAll", &initAll);
         emscripten::function("buildPlant", &buildPlant);
         emscripten::function("makeBranchVector", &makeBranchVector);
         emscripten::function("makeVertexVector", &makeVertexVector);
+
+        emscripten::function("disableKeyboard", &disableKeyboard);
+        emscripten::function("enableKeyboard", &enableKeyboard);
 
         emscripten::value_array<refBranch>("refBranch")
         .element(&refBranch::x0).element(&refBranch::y0).element(&refBranch::z0)

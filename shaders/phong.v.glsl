@@ -1,13 +1,12 @@
-uniform mat4 p_matrix, mv_matrix;
+uniform mat4 camera, model;
 
 attribute vec3 position, normal;
 
 varying vec3 frag_position, frag_normal;
 
 void main() {
-    vec4 eye_position = mv_matrix * vec4(position, 1.0);
-    gl_Position = p_matrix * eye_position;
+    frag_position = position;
+    frag_normal = normal;
 
-    frag_position = eye_position.xyz;
-    frag_normal = (mv_matrix * vec4(normal, 0.0)).xyz;
+    gl_Position = camera * model * vec4(position, 1.0);
 }

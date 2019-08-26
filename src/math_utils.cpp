@@ -4,9 +4,6 @@
 
 #include <iostream>
 
-#define CLOSE_TO_0 0.001f
-#define CLOSER_TO_0 0.0001f
-
 using glm::vec3;
 using glm::quat;
 

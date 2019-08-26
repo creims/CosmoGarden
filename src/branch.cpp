@@ -83,13 +83,20 @@ void Branch::fillExtrudedSquares(vector<GLushort>* indices, GLushort currentExtr
     indices->push_back(p + 1);
 }
 
-void Branch::genCrection(geometry& g, float scale, vec3 center, quat rotate) const {
+void Branch::genCrection(geometry& g, float scale, vec3 center, vec3 direction, quat rotate) const {
     for (auto const& v : crossSection) {
-        // n has the un-normalized direction of the vertex compared to world center
-        // n + center is the scaled/rotated/translated point
-        vec3 n = rotate * v * scale;
+        vec3 scaled = v * scale;
 
-        g.vertices->emplace_back(vertex{n.x + center.x, n.y + center.y, n.z + center.z, n.x, n.y, n.z});
+        // If the scaled vertex is too close to 0, use the direction at the curve as the normal instead of a 0 norm
+        if(length2(scaled) < CLOSER_TO_0) {
+            g.vertices->emplace_back(vertex{center.x, center.y, center.z, direction.x, direction.y, direction.z});
+        } else {
+            vec3 n = rotate * scaled; // Rotate the scaled vector to get normal direction
+            vec3 vert = n + center; // Our final vertex position after translating
+
+            n = normalize(n); // Finally, scale the normal to get a direction
+            g.vertices->emplace_back(vertex{vert.x, vert.y, vert.z, n.x, n.y, n.z});
+        }
     }
 }
 
@@ -97,7 +104,7 @@ geometry Branch::genGeometry() const {
     geometry ret;
 
     // Return empty vectors if the growth percent is low enough
-    if(growthPercent < 0.00001f)
+    if(growthPercent < CLOSER_TO_0)
         return ret;
 
     Bezier subcurve = bezier.subCurve(growthPercent);
@@ -115,11 +122,11 @@ geometry Branch::genGeometry() const {
         // The direction of the bezier at the center of this cross section is the
         // desired "front" for the face, so lookAt(direction, up) is the rotation quaternion
         quat rotQuat = lookAt(b_dirs[i], up);
-        genCrection(ret, thicknessScalar * getCrectionScale(growthPercent, b_dists[i]), b_verts[i], rotQuat);
+        genCrection(ret, thicknessScalar * getCrectionScale(growthPercent, b_dists[i]), b_verts[i], b_dirs[i], rotQuat);
     }
 
     // Generate indices
-    ret.indices->reserve(6 * numPts * numSections - 12);
+    ret.indices->reserve(6 * numPts * (numSections - 1));
 
     //fillFace(ret.indices, 0, false);
 

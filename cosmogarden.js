@@ -99,6 +99,14 @@ Module.onRuntimeInitialized = () => {
         }
     });
 
+    canvas.addEventListener('click', () => {
+        Module.enableKeyboard();
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        Module.disableKeyboard();
+    });
+
     parseBtn.addEventListener('click', parseTDL);
     runBtn.addEventListener('click', callFuncs);
 };

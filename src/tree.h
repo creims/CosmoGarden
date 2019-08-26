@@ -8,6 +8,7 @@
 #include "branch.h"
 #include "plant.h"
 
+// TODO: This class is no longer a "tree," so rename (or move its functionality and remove)
 class Tree {
 public:
     Tree(branchDescription const& trunk, batchdrawer& drawer);

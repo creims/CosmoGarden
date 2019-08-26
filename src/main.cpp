@@ -52,10 +52,7 @@ extern "C" int main(int argc, char** argv) {
 #ifdef EMSCRIPTEN
     setActiveTree(getSceneTree());
 
-    // Disable keyboard events to allow the browser window to process keypresses
-    SDL_EventState(SDL_TEXTINPUT, SDL_DISABLE);
-    SDL_EventState(SDL_KEYDOWN, SDL_DISABLE);
-    SDL_EventState(SDL_KEYUP, SDL_DISABLE);
+    disableKeyboard();
 
     emscripten_set_main_loop(update, 0, 1);
 #else

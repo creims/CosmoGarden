@@ -6,10 +6,11 @@
     <link href="style.css" rel="stylesheet" type="text/css">
 </head>
 <body>
+    <div id="keyboardReceiver" contentEditable="true"></div>
     <div class="display">
         <canvas id="canvas"></canvas>
         <div class="controls">
-            <textarea class="code" id="code" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+            <textarea class="code" id="code" tabindex="0" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             <textarea class="log" id="log" rows="5" readonly autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             <button id="parse">Parse</button>
             <button id="run">Run</button>
@@ -17,11 +18,13 @@
     </div>
 </body>
 <script type="text/javascript">
-    let canvas = document.getElementById("canvas");
+    const canvas = document.getElementById("canvas");
     canvas.width = window.innerWidth * 0.8;
     canvas.height = window.innerHeight;
-    var Module = {};
-    Module.canvas = canvas;
+
+    var Module = {
+        canvas: canvas,
+    };
 </script>
 <script src="module.js"></script>
 <script src="cosmogarden.js"></script>

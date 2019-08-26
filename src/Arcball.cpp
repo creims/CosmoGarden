@@ -1,4 +1,4 @@
-#include "arcball.h"
+#include "Arcball.h"
 #include "math_utils.h"
 
 using glm::vec3;
