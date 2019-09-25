@@ -11,10 +11,12 @@
 // TODO: This class is no longer a "tree," so rename (or move its functionality and remove)
 class Tree {
 public:
-    Tree(branchDescription const& trunk, batchdrawer& drawer);
+    Tree(plantRoot const& root, batchdrawer& drawer);
 
-    void buildFromTrunk(branchDescription const& trunk);
+    void buildFromRoot(plantRoot const& root);
+
     void setGrowth(float growthPercent);
+
     void advance(unsigned int numTicks);
 
 private:

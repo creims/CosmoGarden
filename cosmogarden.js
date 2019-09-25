@@ -1,101 +1,128 @@
 const codeField = document.querySelector('#code');
 const logField = document.querySelector('#log');
+const cmdField = document.querySelector('#cmd');
 const parseBtn = document.querySelector('#parse');
 const runBtn = document.querySelector('#run');
 
-let funcs = {};
-let branchScalars = [];
-let branchFactory = {
-    genCrection: () => undefined,
-    genBranchScaleFunc: () => { return () => 1.0; },
-    genFurcations: (depth, furcation, branch) => depth === 0 ? [0.2, 0.6] : [],
-    genNumBranches: (depth, furcation, branch) => 3,
-    genCurve: (depth, furcation, branch) => [0.0, 0.0, 0.0, 3.0, -3.0, 1.0, 0.1, 1.0, 0.0, 2.0, 0.0, 1.1],
-    genScale: (depth, furcation, branch) => Math.pow(0.6, depth),
-    genAngle: (depth, furcation, branch) => depth === 0 ? 0.0 : 120.0 * branch,
-    genTicksToGrow: (depth, furcation, branch) => 50,
-};
+const TAB = '   ';
 
-const TDLParser = {
-    // Array index 0: full match, 1: function name, 2: arguments, 3: function body
-    functionRE: /function (\w+)\s*\(([\w,\s]*)\)\s*@([^@]*)@/g,
-    compactSpaces: function (text) {
-        return text.replace(/\s+/g, ' ');
+let plantGen;
+let currentPlant;
+let branchScalers = {
+    scalers: {},
+    numRegistered: 0,
+    getBranchScale: function(id, growthRatio, distAlongCurve) {
+        return this.scalers[id](growthRatio, distAlongCurve);
     },
-
-    extractArgs: function (argString) {
-        return argString.split(',').map(s => s.trim());
+    registerScaler: function(fn) {
+        this.scalers[this.numRegistered] = fn;
+        return this.numRegistered++;
     },
-
-    parse: function (text) {
-        let functions = {};
-
-        text = this.compactSpaces(text);
-        let fmatches = [...text.matchAll(this.functionRE)];
-
-        for (let match of fmatches) {
-            const funcName = match[1];
-            const funcArgs = this.extractArgs(match[2]);
-            const funcBody = match[3];
-            try {
-                functions[funcName] = new Function(...funcArgs, funcBody);
-            } catch (err) {
-                log(err + ' in function "' + funcName + '"');
-            }
-        }
-
-        return functions;
+    clear: function() {
+        this.scalers = {};
+        this.numRegistered = 0;
     }
 };
+
+function getBranchScale(id, g, d) {
+    return branchScalers.getBranchScale(id, g, d);
+}
 
 function log(text) {
     logField.value += '\n' + text;
     logField.scrollTop = logField.scrollHeight;
 }
 
-function parseTDL() {
+function handleParse() {
     try {
-        funcs = TDLParser.parse(codeField.value);
-        log('Parse successful.')
-    } catch (err) {
-        log(err + ' in function "' + key + '" at line ' + err.lineNumber);
+        plantGen = compileCOSML(codeField.value);
+        log('Parse successful.');
+    } catch (e) {
+        log(e);
+        plantGen = undefined;
     }
 }
 
-function callFuncs() {
-    if (!funcs.hasOwnProperty('main')) {
-        log('No main function to run. Make sure to Parse first.');
+function handleRun() {
+    if(!plantGen) {
+        log('No valid plant parsed.');
+    } else {
+        const plant = plantGen.build();
+        branchScalers.clear();
+        currentPlant = {};
+        currentPlant.trunks = makeVector(Module.makeBranchVector, plant.map(child =>
+                registerBranch(child)
+            ));
+
+        Module.buildPlant(currentPlant);
+    }
+}
+
+function isReserved(name) {
+    if(name === 'default' || name === 'lastsession') {
+        return true;
+    }
+
+    return false;
+}
+
+function loadCode(name) {
+    if(name === 'default') {
+        codeField.value = '# This default program can be recovered via the "load default" command\n# \'#\' specifies comments\n# The plant keyword needs to be defined once, and specifies the plant\nplant {\n   # Specifying a non-0 start ratio at depth 0 is a bad idea\n   Branch_A\n   {\n      0.7: Branch_A\n      {\n         0.7: Branch_B{}*2\n         .6~.8: Branch_B{angle=30~190} # The range operator \'~\' can be used with any expression\n      }*2\n\n      0.0: Leaf{}*4~6.5 # This will be rounded to an integer\n   }\n}\n\nBranch_A {\n   curve = sp_BA # Identifiers are defined below\n\n   # The parent operator \'^\' gives you access to the branch\'s parent\n   scale = ^.scale * 0.57\n\n   angle = 120\n   ticks = parent.ticks # \'parent\' is the same as \'^\'\n}\n\nBranch_B {\n   curve= sp_BB\n   scale= ^.scale * 0.2~0.45\n   angle= 120\n}\n\nLeaf {\n   curve= sp_L\n   scale= 0.3~0.45\n\n   # Emitters can represent any expression\n   # You can range through identifiers too\n   angle= sixty~seventy\n\n   crection=crec_a\n   # Functions aren\'t re-implemented yet, so scalers need to wait\n   #crectionScaler=scaleFunc()\n}\n\n# Here is where our emitters are defined\n# Nesting emitters doesn\'t work yet, eg \"emit=[one, two]\"\nsp_BA = [0.0, 0.0, 0.0, 0.0, 1.0, 0.001, 0.5, 2.0, 0.8, 2.0, 3.0, 1.2]\nsp_BB = [0.0, 0.0, 0.0, 2, 3, -0.5~0.5, 4, 5, -0.5~0.5, 6, 2, -0.5~0.5]\nsp_L=[0.0, 0.0, 0.0, 2~5.5, 3, 3, 4, 5, 0~3, 6, 2, 0~3]\nsixty = 60\nseventy = 70\ncrec_a = [1, 0, 0, 0, 0.2, 0, -1, 0, 0, 0, -0.2, 0]';
+    } else {
+        const text = window.localStorage.getItem(name);
+        if (text === null) {
+            log('No program "' + name + '" found in local storage');
+        }
+
+        codeField.value = text;
+    }
+
+    log('Loaded "' + name + '"');
+}
+
+function saveCode(name) {
+    if(isReserved(name)) {
+        log('WARNING: Save failed. Name "' + name + '" is reserved.');
         return;
     }
 
     try {
-        funcs['main']();
-        branchScalars = [];
-        let trunk = furcate(0, 0, 0, 0.0);
-        Module.buildPlant(trunk);
-    } catch (err) {
-        log("Run error: " + err);
+        window.localStorage.setItem(name, codeField.value);
+        log('Saved as "' + name + '".');
+    } catch(e) {
+        log('WARNING: Unable to save program "' + name + '"!');
     }
 }
 
-function getBranchScale(id, growthRatio, distAlongCurve) {
-    return branchScalars[id](growthRatio, distAlongCurve);
+// Save work!
+function handleUnload() {
+    window.localStorage.setItem('lastsession', codeField.value);
+}
+
+function loadInitialProgram() {
+    const code = window.localStorage.getItem('lastsession');
+    if(!code) {
+        loadCode('default');
+    } else {
+        codeField.value = code;
+    }
 }
 
 Module.onRuntimeInitialized = () => {
-    Module.initAll();
-
     // Converted using http://www.howtocreate.co.uk/tutorials/jsexamples/syntax/prepareInline.html
-    codeField.value = '\/\/ No return\n\/\/ Describe your cross section here by pushing vert(x, y, z)\nfunction genCrection(crection, depth, furcation, branch) @\n\tif(depth === 1 && furcation === 0) {\n\t\tcrection.push_back(vert(1.0, 0.0, 0.0));\n\t\tcrection.push_back(vert(0.0, 0.2, 0.0));\n\t\tcrection.push_back(vert(-1.0, 0.0, 0.0));\n\t\tcrection.push_back(vert(0.0, -0.2, 0.0));\n\t}\n@\n\n\/\/ function(float growthRatio, float distAlongCurve) -> float branchScalar\n\/\/ Returns a function that takes two floats and returns a scalar.\n\/\/ The branch\'s cross section will be scaled by this scalar\nfunction genBranchScaleFunc(depth, furcation, branch) @\n\tif(depth === 0) {\n\t\treturn (growthRatio, distAlongCurve) => 0.25 * growthRatio * Math.pow(1.0 - distAlongCurve, 0.4);\n\t}\n\tif(depth === 1 && furcation === 0) {\n\t\treturn (g, d) => 0.6 * g * (Math.pow(d, 0.2) - Math.pow(d, 2));\n\t}\n\n\treturn function(growthRatio, distAlongCurve) {\n\t\treturn 0.1 * growthRatio * Math.pow(1.0 - distAlongCurve, 0.3);\n\t};\n@\n\n\/\/ array[n floats]\n\/\/ A list of float distances along the branch that\n\/\/ furcations occur at (between 0 and 1)\nfunction genFurcations(depth, furcation, branch) @\n\tif(depth === 0) return [0.0, 0.7];\n\tif(depth === 1) return furcation === 0 ? [] : [0.5];\n\treturn [];\n@\n\n\/\/ integer\n\/\/ The number of branches in a furcation\nfunction genNumBranches(depth, furcation, branch) @\n\tif(depth === 0 && furcation === 0) return 6;\n\tif(furcation === 0) return 3; \n\treturn 2;\n@\n\n\/\/ array[12 floats]\n\/\/ Branch curves are an array of 12 floats corresponding \n\/\/ to the X, Y, Z values of the 4 control points of a \n\/\/ quadratic bezier curve\nfunction genCurve(depth, furcation, branch) @\n\tif(depth === 0) return [0.0, -2.0, 0.0, -0.5, 0.0, 0.5, 0.5, 2.0, 0.8, -2.0, 3.0, 1.8];\n\tif(depth === 1 && furcation == 0) {\n\t\treturn [0.0, 0.0, 0.0, \n\t\t\t2, 3, Math.random() - 0.5, \n\t\t\t4, 5, Math.random() - 0.5, \n\t\t\t6, 2, Math.random() - 0.5,];\n\t}\n\n\tvar cps = [0.0, 0.0, 0.0];\n\tfor(var i = 0; i < 9; i++) {\n\t\tcps.push(Math.random() * 3);\n\t}\n\treturn cps; \n@\n\n\/\/ float\n\/\/ How big is the branch curve?\nfunction genScale(depth, furcation, branch) @\n\treturn Math.pow(0.62, depth);\n@\n\n\/\/ float\n\/\/ What is the angle, in degrees, of roll around the parent branch?\nfunction genAngle(depth, furcation, branch) @\n\tif(depth === 1 && furcation === 0) return branch * 60; \n\treturn branch * 120.0;\n@\n\n\/\/ int\n\/\/ How many ticks will it take to grow the branch once it begins?\nfunction genTicksToGrow(depth, furcation, branch) @\n\treturn 50 + depth * 20 + branch * 10;\n@\n\n\/\/ The code in \'main\' is run when you hit \'run\'\nfunction main() @\n\tlog(\"Building tree...\");\n\tbranchFactory.genCrection = funcs.genCrection;\n\tbranchFactory.genBranchScaleFunc = funcs.genBranchScaleFunc;\n\tbranchFactory.genFurcations = funcs.genFurcations;\n\tbranchFactory.genNumBranches = funcs.genNumBranches;\n\tbranchFactory.genCurve = funcs.genCurve;\n\tbranchFactory.genScale = funcs.genScale;\n\tbranchFactory.genAngle = funcs.genAngle;\n\tbranchFactory.genTicksToGrow = funcs.genTicksToGrow;\n@';
     logField.value = 'Welcome to CosmoGarden!';
+
+    loadInitialProgram();
+
 
     // Allow tab in textarea
     codeField.addEventListener('keydown', function (e) {
         if (e.code === 'Tab') {
             e.preventDefault();
             let s = this.selectionStart;
-            this.value = this.value.substring(0, this.selectionStart) + "\t" + this.value.substring(this.selectionEnd);
-            this.selectionEnd = s + 1;
+            this.value = this.value.substring(0, this.selectionStart) + TAB + this.value.substring(this.selectionEnd);
+            this.selectionEnd = s + TAB.length;
         }
     });
 
@@ -107,41 +134,79 @@ Module.onRuntimeInitialized = () => {
         Module.disableKeyboard();
     });
 
-    parseBtn.addEventListener('click', parseTDL);
-    runBtn.addEventListener('click', callFuncs);
+    cmdField.addEventListener('keydown', e => {
+        if(e.code === 'Enter') {
+            executeCommand(cmdField.value);
+            cmdField.value = '';
+        }
+    });
+
+    parseBtn.addEventListener('click', handleParse);
+    runBtn.addEventListener('click', handleRun);
+
+    window.addEventListener('beforeunload', handleUnload);
+
+    Module.initAll();
 };
 
-function branchDescription(depth, furcation, branch, startRatio) {
-    let bd = {};
-    bd.id = branchScalars.length;
-    branchScalars.push(branchFactory.genBranchScaleFunc(depth, furcation, branch));
-    bd.startRatio = startRatio;
-    bd.curve = branchFactory.genCurve(depth, furcation, branch);
-    bd.scale = branchFactory.genScale(depth, furcation, branch);
-    bd.angle = branchFactory.genAngle(depth, furcation, branch);
-    bd.ticksToGrow = branchFactory.genTicksToGrow(depth, furcation, branch);
-    bd.children = Module.makeBranchVector();
-    bd.crossSection = Module.makeVertexVector();
-    branchFactory.genCrection(bd.crossSection, depth, furcation, branch);
-    return bd;
-}
+function executeCommand(text) {
+    const [cmd, ...args] = text.trim().split(' ');
+    if(cmd.length === 0) return;
 
-function vert(x, y, z) {
-    return {x: x, y: y, z: z};
-}
+    switch(cmd) {
+        case 'save':
+            if(args.length !== 1) {
+                log('Usage: save <name>');
+                return;
+            }
 
-function furcate(depth, furcation, branch, startRatio) {
-    let newBranch = branchDescription(depth, furcation, branch, startRatio);
-    let furcs = branchFactory.genFurcations(depth, furcation, branch);
+            saveCode(args[0]);
+            break;
+        case 'load':
+            if(args.length !== 1) {
+                log('Usage: load <name>');
+                return;
+            }
 
-    for(let furcNum = 0; furcNum < furcs.length; furcNum++) {
-        let numBranches = branchFactory.genNumBranches(depth, furcNum, branch);
-        let furcStartRatio = furcs[furcNum];
-
-        for(let branchNum = 0; branchNum < numBranches; branchNum++) {
-            newBranch.children.push_back(furcate(depth + 1, furcNum, branchNum, furcStartRatio));
-        }
+            loadCode(args[0]);
+            break;
+        default:
+            log('Invalid command: ' + cmd);
     }
+}
 
-    return newBranch;
+function makeVector(initializer, arr) {
+    const vec = initializer();
+    arr.forEach(e => {
+       vec.push_back(e);
+    });
+
+    return vec;
+}
+
+function vertexify(arr) {
+    if(arr.length % 3 !== 0) throw new Error('Array length not divisible by 3');
+    const ret = [];
+    for(let i = 0; i < arr.length; i += 3) {
+        ret.push({
+            x: arr[i],
+            y: arr[i + 1],
+            z: arr[i + 2]
+        });
+    }
+    return ret;
+}
+
+function registerBranch(branch) {
+    let bd = {};
+    bd.id = branchScalers.registerScaler(branch.crectionScale);
+    bd.crossSection = makeVector(Module.makeVertexVector, vertexify(branch.crection));
+    bd.curve = branch.curve;
+    bd.startRatio = branch.start;
+    bd.scale = branch.scale;
+    bd.angle = branch.angle;
+    bd.ticksToGrow = branch.ticks;
+    bd.children = makeVector(Module.makeBranchVector, branch.children.map(child => registerBranch(child)));
+
+    return bd;
 }

@@ -10,6 +10,7 @@ typedef int branch_id;
 constexpr branch_id INVALID_BRANCH_ID = -1;
 
 // TODO: Make this a vector<vec3> and just do size checking
+// Maybe replace with Bezier
 struct refBranch {
     refBranch() = default;
     refBranch(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3)
@@ -22,6 +23,7 @@ struct refBranch {
     x3{3.0f}, y3{3.0f}, z3{3.0f};
 };
 
+// TODO: ID is never used internally, so remove it and wrap it in web.cpp
 struct branchDescription {
     unsigned int id{0};
     crection crossSection{};
@@ -34,6 +36,10 @@ struct branchDescription {
     crectionScaleFunc getCrectionScale {};
 };
 
+struct plantRoot {
+    std::vector<branchDescription> trunks{};
+};
+
 // TODO: just add tick info to branches instead of having a wrapper?
 struct branchWrapper {
     branch_id id{0};
@@ -44,8 +50,8 @@ struct branchWrapper {
 class Plant {
 public:
     Plant() = default;
-    explicit Plant(branchDescription const& trunk);
-    void setTrunk(branchDescription const& trunk);
+    explicit Plant(plantRoot const& root);
+    void setTrunk(plantRoot const& root);
 
     // Returns the id of the first changed branch
     branch_id advance(unsigned int ticks);
@@ -55,9 +61,9 @@ private:
     std::vector<branchWrapper> branches{};
     unsigned int currTicks{0}, totalTicks{0};
 
-    void build(branchDescription const& trunk);
+    void build(plantRoot const& root);
     void addBranch(branchDescription const& desc, posAndDir const& parentPD, unsigned int branchStartTick);
-    Branch makeBranch(refBranch const& ref, float scale, float angle, glm::vec3 const& position, glm::vec3 const& direction);
+    static Branch makeBranch(refBranch const& ref, float scale, float angle, glm::vec3 const& position, glm::vec3 const& direction);
 };
 
 

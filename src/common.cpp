@@ -44,7 +44,7 @@ struct {
     float zoom{1.0f};
 } scene;
 
-//TODO: replace with shader class?
+//TODO: replace with material
 struct {
     GLuint program{0};
     GLint uniform_camera{0}, uniform_model{0}, uniform_color{0}, uniform_camera_position{0};
@@ -62,16 +62,18 @@ void initTestTree() {
     };
 
     trunk.ticksToGrow = 0;
-        scene.tree = new Tree{trunk, *scene.treeDrawer};
+    plantRoot root{};
+    root.trunks.push_back(trunk);
+    scene.tree = new Tree{root, *scene.treeDrawer};
 }
 
 void initDefaultTree() {
     branchDescription trunk{};
     trunk.curve = refBranch{
-            0.5f, -3.0f, 0.1f,
-            0.2f, -1.0f, 0.1f,
-            0.5f, 2.0f, 0.3f,
-            0.0f, 3.5f, 0.1f
+            0.5f, 0.0f, 0.1f,
+            0.2f, 2.0f, 0.1f,
+            0.5f, 5.0f, 0.3f,
+            0.0f, 6.5f, 0.1f
     };
 
     crectionScaleFunc def = [](float growthPct, float distAlongCurve) {
@@ -96,13 +98,14 @@ void initDefaultTree() {
     trunk.children[1].children.push_back(branch2);
     trunk.children[1].children.push_back(branch3);
 
-    scene.tree = new Tree{trunk, *scene.treeDrawer};
-    scene.tree->buildFromTrunk(trunk);
+    plantRoot root{};
+    root.trunks.push_back(trunk);
+    scene.tree = new Tree{root, *scene.treeDrawer};
 }
 
 bool initResources() {
     // Shaders
-    // TODO: do setup in shader object
+    // TODO: do setup in shader/material object
     branchShader.program = create_program("../shaders/phong.v.glsl", "../shaders/phong.f.glsl");
 
     branchShader.attr_position = glGetAttribLocation(branchShader.program, "position");
@@ -142,7 +145,7 @@ bool cInit(int w, int h, SDL_Window* window) {
 }
 
 void updateMVP() {
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f));
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
     scene.model_matrix = model;
 
     if (scene.isArcball) {

@@ -16,14 +16,14 @@ body {
     justify-content: space-around;
 }
 
-textarea {
+textarea, input {
     width: 100%;
     background-color: lightskyblue;
     resize: none;
 }
 
 .code {
-    height: 80%;
+    height: 70%;
 }
 
 button {

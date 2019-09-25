@@ -8,9 +8,9 @@
 using glm::vec3;
 using glm::quat;
 
-Tree::Tree(branchDescription const& trunk, batchdrawer& drawer)
+Tree::Tree(const plantRoot& root, batchdrawer& drawer)
         : drawer{drawer} {
-    buildFromTrunk(trunk);
+    buildFromRoot(root);
 }
 
 /*
@@ -49,7 +49,7 @@ void Tree::furcate(int timesToBranch, float pctAlong, float scale, posAndDir p, 
     }
 }*/
 
-// TODO: update to use ticks
+// TODO: update to use ticks (or make a tick version in addition)
 void Tree::setGrowth(float growthPercent) {
     currTicks = std::min(lastTick, (unsigned int) (lastTick * growthPercent));
 }
@@ -63,9 +63,9 @@ void Tree::advance(unsigned int numTicks) {
     drawer.updateFrom(id);
 }
 
-void Tree::buildFromTrunk(branchDescription const& trunk) {
+void Tree::buildFromRoot(const plantRoot& root) {
     drawer.clear();
-    plant = std::make_unique<Plant>(trunk);
+    plant = std::make_unique<Plant>(root);
     std::vector<branchWrapper>& bs = plant->getBranches();
 
     // Because the drawer updates from the first branch which has changed,

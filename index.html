@@ -6,12 +6,12 @@
     <link href="style.css" rel="stylesheet" type="text/css">
 </head>
 <body>
-    <div id="keyboardReceiver" contentEditable="true"></div>
     <div class="display">
         <canvas id="canvas"></canvas>
         <div class="controls">
             <textarea class="code" id="code" tabindex="0" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             <textarea class="log" id="log" rows="5" readonly autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+            <input type="text" class="cmd" id="cmd" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
             <button id="parse">Parse</button>
             <button id="run">Run</button>
         </div>
@@ -27,5 +27,6 @@
     };
 </script>
 <script src="module.js"></script>
+<script src="cosml_parse.js"></script>
 <script src="cosmogarden.js"></script>
 </html>

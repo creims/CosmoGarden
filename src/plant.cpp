@@ -5,21 +5,23 @@
 using glm::vec3;
 using glm::quat;
 
-Plant::Plant(branchDescription const& trunk) {
-    build(trunk);
+Plant::Plant(plantRoot const& root) {
+    build(root);
 }
 
-void Plant::setTrunk(branchDescription const& trunk) {
-    build(trunk);
+void Plant::setTrunk(plantRoot const& root) {
+    build(root);
 }
 
 // Construct branches from a branchTree
-void Plant::build(branchDescription const& trunk) {
+void Plant::build(plantRoot const& root) {
     branches.clear();
     currTicks = 0;
     totalTicks = 0;
 
-    addBranch(trunk, posAndDir{VEC3_ORIGIN, WORLD_UP}, 0);
+    for(auto const& branch : root.trunks) {
+        addBranch(branch, posAndDir{VEC3_ORIGIN, WORLD_UP}, 0);
+    }
 }
 
 void Plant::addBranch(branchDescription const& desc, posAndDir const& furcationPoint, unsigned int const branchStartTick) {
