@@ -2,14 +2,11 @@
 #define COMMON_H
 
 #include "tree.h"
+#include "Scene.h"
 
-bool cInit(int w, int h, SDL_Window* window);
-void cClose();
-bool initResources();
+Scene& initScene(int w, int h, SDL_Window* window);
 
-void update();
+void update(Scene& scene);
 bool shouldQuit();
-
-Tree* getSceneTree();
 
 #endif //COMMON_H

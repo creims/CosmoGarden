@@ -3,7 +3,7 @@ project(CosmoGarden)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(CosmoGarden src/main.cpp src/branch.cpp src/branch.h src/common.cpp src/common.h src/shader_utils.cpp src/shader_utils.h src/consts.h src/math_utils.cpp src/math_utils.h src/drawable.h src/bezier.cpp src/bezier.h src/tree.cpp src/tree.h src/Arcball.cpp src/Arcball.h src/batchdrawer.cpp src/batchdrawer.h src/drawable.cpp src/plant.cpp src/plant.h src/Camera.cpp src/Camera.h)
+add_executable(CosmoGarden src/main.cpp src/branch.cpp src/branch.h src/common.cpp src/common.h src/gfx/shader_utils.cpp src/gfx/shader_utils.h src/consts.h src/math_utils.cpp src/math_utils.h src/drawable.h src/bezier.cpp src/bezier.h src/tree.cpp src/tree.h src/Arcball.cpp src/Arcball.h src/batchdrawer.cpp src/batchdrawer.h src/drawable.cpp src/plant.cpp src/plant.h src/Camera.cpp src/Camera.h src/gfx/SolidColorMaterial.cpp src/gfx/SolidColorMaterial.h src/Scene.cpp src/Scene.h src/gfx/Material.cpp src/gfx/Material.h)
 
 find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)

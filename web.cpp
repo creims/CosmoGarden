@@ -10,10 +10,10 @@ using glm::vec3;
 emscripten::val logHandler = emscripten::val::undefined();
 emscripten::val branchScaleHandler = emscripten::val::undefined();
 
-Tree* tree;
+Scene* scene;
 
-void setActiveTree(Tree* t) {
-    tree = t;
+void setActiveScene(Scene& s) {
+    scene = &s;
 }
 
 void initAll() {
@@ -43,7 +43,7 @@ void buildPlant(plantRoot& root) {
     for (auto& trunk : root.trunks) {
         registerCrectionScaleFuncs(trunk);
     }
-    tree->buildFromRoot(root);
+    scene->buildTree(root);
 }
 
 std::vector<branchDescription> makeBranchVector() {

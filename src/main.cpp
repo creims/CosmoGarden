@@ -14,6 +14,13 @@
 static SDL_Window* window;
 static SDL_GLContext glContext;
 
+#ifdef EMSCRIPTEN
+void emrun(void* scenePtr) {
+    Scene* scene = (Scene*)scenePtr;
+    update(*scene);
+}
+#endif
+
 extern "C" int main(int argc, char** argv) {
     int w = 800;
     int h = 800;
@@ -41,26 +48,21 @@ extern "C" int main(int argc, char** argv) {
         return 1;
     }
 
-    if(!cInit(w, h, window)) {
-        return 1;
-    }
-
-    if(!initResources()) {
-        return 1;
-    }
+    Scene& scene = initScene(w, h, window);
 
 #ifdef EMSCRIPTEN
-    setActiveTree(getSceneTree());
+    setActiveScene(scene);
 
     disableKeyboard();
 
-    emscripten_set_main_loop(update, 0, 1);
+    emscripten_set_main_loop_arg(emrun, &scene, 0, 1);
 #else
 
     while(!shouldQuit()) {
-        update();
+        update(scene);
     }
-    cClose();
+
+    SDL_Quit();
 
     return 0;
 #endif

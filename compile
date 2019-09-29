@@ -1,4 +1,4 @@
 emcc -O3 --bind -s FULL_ES2=1 -s USE_SDL=2 -s -std=gnu++14 -s WASM=1 \
 -o module.js --preload-file shaders \
 -idirafter /usr/include/ \
-src/*.cpp
+src/*.cpp src/gfx/*.cpp
